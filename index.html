@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parkopia - Theme Park Tycoon</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Top HUD Bar -->
+        <div id="hud-bar">
+            <div class="hud-section" id="hud-left">
+                <div class="hud-item" id="hud-money">
+                    <span class="hud-icon">$</span>
+                    <span class="hud-value" id="money-value">10,000</span>
+                </div>
+                <div class="hud-item" id="hud-guests">
+                    <span class="hud-icon" id="guest-icon">&#9823;</span>
+                    <span class="hud-value" id="guest-value">0</span>
+                </div>
+                <div class="hud-item" id="hud-happiness">
+                    <span class="hud-icon">&#9786;</span>
+                    <span class="hud-value" id="happiness-value">--</span>
+                </div>
+                <div class="hud-item" id="hud-rating">
+                    <span class="hud-icon">&#9733;</span>
+                    <span class="hud-value" id="rating-value">0.0</span>
+                </div>
+            </div>
+            <div class="hud-section" id="hud-center">
+                <span id="park-name">Parkopia</span>
+            </div>
+            <div class="hud-section" id="hud-right">
+                <div class="hud-item" id="hud-date">
+                    <span class="hud-value" id="date-value">Day 1</span>
+                </div>
+                <div class="speed-controls">
+                    <button class="speed-btn active" data-speed="1">&#9654;</button>
+                    <button class="speed-btn" data-speed="2">&#9654;&#9654;</button>
+                    <button class="speed-btn" data-speed="3">&#9654;&#9654;&#9654;</button>
+                    <button class="speed-btn" data-speed="0">&#10074;&#10074;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Build Toolbar (Bottom) -->
+        <div id="build-toolbar">
+            <div class="toolbar-categories">
+                <button class="cat-btn active" data-category="paths" title="Paths">
+                    <span class="cat-icon">&#9776;</span>
+                    <span class="cat-label">Paths</span>
+                </button>
+                <button class="cat-btn" data-category="rides" title="Rides">
+                    <span class="cat-icon">&#9752;</span>
+                    <span class="cat-label">Rides</span>
+                </button>
+                <button class="cat-btn" data-category="food" title="Food & Drink">
+                    <span class="cat-icon">&#9749;</span>
+                    <span class="cat-label">Food</span>
+                </button>
+                <button class="cat-btn" data-category="scenery" title="Scenery">
+                    <span class="cat-icon">&#9752;</span>
+                    <span class="cat-label">Scenery</span>
+                </button>
+                <button class="cat-btn" data-category="buildings" title="Buildings">
+                    <span class="cat-icon">&#9962;</span>
+                    <span class="cat-label">Buildings</span>
+                </button>
+                <button class="cat-btn" data-category="demolish" title="Demolish">
+                    <span class="cat-icon">&#10006;</span>
+                    <span class="cat-label">Remove</span>
+                </button>
+            </div>
+            <div class="toolbar-items" id="toolbar-items">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Info Panel (Right side, shows on selection) -->
+        <div id="info-panel" class="hidden">
+            <button id="info-close">&times;</button>
+            <h3 id="info-title">Selected Item</h3>
+            <div id="info-content"></div>
+        </div>
+
+        <!-- Build Cost Preview -->
+        <div id="build-preview" class="hidden">
+            <span id="preview-name"></span>
+            <span id="preview-cost"></span>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/assets.js"></script>
+    <script src="js/pathfinding.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/guests.js"></script>
+    <script src="js/economy.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
