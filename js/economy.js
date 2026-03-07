@@ -69,6 +69,8 @@ const Economy = (() => {
             day++;
             dayIncome = 0;
             dayExpenses = 0;
+            // Award daily XP
+            if (typeof Levels !== 'undefined') Levels.addXP(5, 'daily');
         }
 
         // Update park rating
@@ -132,7 +134,10 @@ const Economy = (() => {
     function guestEntered() {
         totalGuestsEver++;
         addIncome(CONFIG.ENTRANCE_FEE, 'Entrance fee');
+        if (typeof Levels !== 'undefined') Levels.addXP(1, 'entrance');
     }
+
+    function getTotalGuestsEver() { return totalGuestsEver; }
 
     function reset() {
         money = CONFIG.STARTING_MONEY;
@@ -162,6 +167,7 @@ const Economy = (() => {
         getTotalExpenses,
         getLog,
         guestEntered,
+        getTotalGuestsEver,
         reset,
     };
 })();

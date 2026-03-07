@@ -8,11 +8,14 @@ const UI = (() => {
     let buildMode = false;
     let demolishMode = false;
     let inspectedObj = null; // currently shown in info panel
+    let parkName = 'Parkopia';
 
     function init() {
         setupCategoryButtons();
         setupSpeedButtons();
         setupInfoPanel();
+        setupParkName();
+        setupOverlayButtons();
         populateToolbarItems('paths');
     }
 
@@ -48,9 +51,22 @@ const UI = (() => {
             const def = BUILDINGS[itemKey];
             if (!def) return;
 
+            const unlocked = (typeof Levels !== 'undefined') ? Levels.isUnlocked(itemKey) : true;
+
             const btn = document.createElement('button');
             btn.className = 'item-btn';
             btn.dataset.item = itemKey;
+
+            if (!unlocked) {
+                btn.classList.add('locked');
+                const lockLevel = (typeof Levels !== 'undefined') ? Levels.getUnlockLevel(itemKey) : '?';
+
+                // Lock overlay
+                const lockOverlay = document.createElement('div');
+                lockOverlay.className = 'lock-overlay';
+                lockOverlay.innerHTML = `🔒 Lv${lockLevel}`;
+                btn.appendChild(lockOverlay);
+            }
 
             // Thumbnail
             const thumb = Assets.getThumbnail(itemKey);
@@ -68,18 +84,26 @@ const UI = (() => {
             costEl.textContent = '$' + def.cost;
             btn.appendChild(costEl);
 
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedItem = itemKey;
-                buildMode = true;
-                demolishMode = false;
-                document.getElementById('game-canvas').classList.add('placing');
-                updateBuildPreview();
-            });
+            if (unlocked) {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedItem = itemKey;
+                    buildMode = true;
+                    demolishMode = false;
+                    document.getElementById('game-canvas').classList.add('placing');
+                    updateBuildPreview();
+                });
+            }
 
             container.appendChild(btn);
         });
+    }
+
+    function refreshToolbar() {
+        if (selectedCategory && selectedCategory !== 'demolish') {
+            populateToolbarItems(selectedCategory);
+        }
     }
 
     function setupSpeedButtons() {
@@ -102,24 +126,221 @@ const UI = (() => {
         });
     }
 
+    // ---- Park Name (click to rename) ----
+    function setupParkName() {
+        const nameEl = document.getElementById('park-name');
+        nameEl.style.cursor = 'pointer';
+        nameEl.title = 'Click to rename your park';
+        nameEl.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = parkName;
+            input.className = 'park-name-input';
+            input.maxLength = 24;
+
+            nameEl.textContent = '';
+            nameEl.appendChild(input);
+            input.focus();
+            input.select();
+
+            const finishRename = () => {
+                const newName = input.value.trim();
+                if (newName && newName.length > 0) {
+                    parkName = newName;
+                }
+                nameEl.textContent = parkName;
+                document.title = parkName + ' - Theme Park Tycoon';
+            };
+
+            input.addEventListener('blur', finishRename);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { input.blur(); }
+                if (e.key === 'Escape') { input.value = parkName; input.blur(); }
+                e.stopPropagation(); // prevent game key handlers
+            });
+            input.addEventListener('keyup', (e) => e.stopPropagation());
+        });
+    }
+
+    // ---- Overlay Panel Buttons (Stats, Recommendations) ----
+    function setupOverlayButtons() {
+        // Stats button
+        document.getElementById('btn-stats')?.addEventListener('click', () => {
+            togglePanel('stats-panel');
+            if (!document.getElementById('stats-panel').classList.contains('hidden')) {
+                renderStatsPanel();
+            }
+        });
+
+        // Recommendations button
+        document.getElementById('btn-recs')?.addEventListener('click', () => {
+            togglePanel('recs-panel');
+            if (!document.getElementById('recs-panel').classList.contains('hidden')) {
+                renderRecsPanel();
+            }
+        });
+
+        // Close buttons
+        document.getElementById('stats-close')?.addEventListener('click', () => {
+            document.getElementById('stats-panel').classList.add('hidden');
+        });
+        document.getElementById('recs-close')?.addEventListener('click', () => {
+            document.getElementById('recs-panel').classList.add('hidden');
+        });
+    }
+
+    function togglePanel(panelId) {
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        // Close other overlays
+        ['stats-panel', 'recs-panel'].forEach(id => {
+            if (id !== panelId) document.getElementById(id)?.classList.add('hidden');
+        });
+        panel.classList.toggle('hidden');
+    }
+
+    // ---- Stats Panel Rendering ----
+    function renderStatsPanel() {
+        const content = document.getElementById('stats-content');
+        if (!content) return;
+
+        const stats = Stats.getParkStats();
+        const topRides = Stats.getTopRides();
+        const topFood = Stats.getTopFood();
+
+        let html = '';
+
+        // Park Overview
+        html += '<div class="stats-section">';
+        html += '<h4 class="stats-heading">Park Overview</h4>';
+        html += statsRow('Day', stats.day);
+        html += statsRow('Level', `${stats.level} / ${(typeof Levels !== 'undefined') ? Levels.getMaxLevel() : 5}`);
+        html += statsRow('XP', `${stats.xp}${(typeof Levels !== 'undefined' && Levels.getXPForNextLevel()) ? ' / ' + Levels.getXPForNextLevel() : ' (MAX)'}`);
+        html += statsRow('Rating', '⭐ ' + stats.parkRating + ' / 5.0');
+        html += statsRow('Guests', stats.currentGuests + ' / ' + stats.maxGuests);
+        html += statsRow('Total Visitors', stats.totalGuestsEver);
+        html += statsRow('Avg Happiness', stats.avgHappiness + '%');
+        html += '</div>';
+
+        // Finances
+        html += '<div class="stats-section">';
+        html += '<h4 class="stats-heading">Finances</h4>';
+        html += statsRow('Total Income', formatMoney(stats.totalIncome), 'positive');
+        html += statsRow('Total Expenses', formatMoney(stats.totalExpenses), 'negative');
+        html += statsRow('Net Profit', formatMoney(stats.netProfit), stats.netProfit >= 0 ? 'positive' : 'negative');
+        html += statsRow('Today Income', formatMoney(stats.dayIncome), 'positive');
+        html += statsRow('Today Expenses', formatMoney(stats.dayExpenses), 'negative');
+        html += '</div>';
+
+        // Infrastructure
+        html += '<div class="stats-section">';
+        html += '<h4 class="stats-heading">Infrastructure</h4>';
+        html += statsRow('Rides', stats.totalRides);
+        html += statsRow('Food Stalls', stats.totalFoodStalls);
+        html += statsRow('Scenery', stats.totalScenery);
+        html += statsRow('Buildings', stats.totalBuildings2);
+        html += statsRow('Path Tiles', stats.totalPaths);
+        html += '</div>';
+
+        // Top Rides
+        if (topRides.length > 0) {
+            html += '<div class="stats-section">';
+            html += '<h4 class="stats-heading">🏆 Top Rides</h4>';
+            topRides.slice(0, 5).forEach((r, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
+                html += `<div class="stats-ride-row">
+                    <span class="stats-medal">${medal}</span>
+                    <span class="stats-ride-name">${r.name}</span>
+                    <span class="stats-ride-stat">${r.totalRiders} riders · ${formatMoney(r.revenue)}</span>
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        // Top Food
+        if (topFood.length > 0) {
+            html += '<div class="stats-section">';
+            html += '<h4 class="stats-heading">🏆 Top Food Stalls</h4>';
+            topFood.slice(0, 5).forEach((f, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
+                html += `<div class="stats-ride-row">
+                    <span class="stats-medal">${medal}</span>
+                    <span class="stats-ride-name">${f.name}</span>
+                    <span class="stats-ride-stat">${f.totalSales} sales · ${formatMoney(f.revenue)}</span>
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        content.innerHTML = html;
+    }
+
+    function statsRow(label, value, cls) {
+        return `<div class="info-row"><span class="info-label">${label}</span><span class="info-val${cls ? ' ' + cls : ''}">${value}</span></div>`;
+    }
+
+    // ---- Recommendations Panel Rendering ----
+    function renderRecsPanel() {
+        const content = document.getElementById('recs-content');
+        if (!content) return;
+
+        const recs = Stats.getRecommendations();
+        let html = '';
+
+        recs.forEach(r => {
+            const priorityClass = r.priority === 'high' ? 'rec-high' : r.priority === 'medium' ? 'rec-medium' : 'rec-low';
+            html += `<div class="rec-item ${priorityClass}">
+                <span class="rec-icon">${r.icon}</span>
+                <span class="rec-text">${r.text}</span>
+                <span class="rec-priority">${r.priority}</span>
+            </div>`;
+        });
+
+        content.innerHTML = html;
+    }
+
+    // ---- HUD Update ----
     function updateHUD() {
         document.getElementById('money-value').textContent = formatMoney(Economy.getMoney());
-        document.getElementById('guest-value').textContent = Guests.getCount();
+
+        const maxGuests = (typeof Levels !== 'undefined') ? Levels.getMaxGuests() : CONFIG.MAX_GUESTS;
+        document.getElementById('guest-value').textContent = Guests.getCount() + '/' + maxGuests;
+
         const avgHappy = Guests.getAverageHappiness();
         document.getElementById('happiness-value').textContent =
             Guests.getCount() > 0 ? Math.round(avgHappy) + '%' : '--';
         document.getElementById('rating-value').textContent = Economy.getRating().toFixed(1);
         document.getElementById('date-value').textContent = 'Day ' + Economy.getDay();
 
+        // Level & XP bar
+        if (typeof Levels !== 'undefined') {
+            const levelEl = document.getElementById('level-value');
+            if (levelEl) levelEl.textContent = 'Lv' + Levels.getLevel();
+
+            const xpBar = document.getElementById('xp-bar-fill');
+            if (xpBar) {
+                const progress = Levels.getXPProgress();
+                xpBar.style.width = (progress * 100) + '%';
+            }
+        }
+
         // Live-update info panel
         refreshInfoPanel();
+
+        // Live-update stats/recs if visible
+        if (!document.getElementById('stats-panel')?.classList.contains('hidden')) {
+            renderStatsPanel();
+        }
+        if (!document.getElementById('recs-panel')?.classList.contains('hidden')) {
+            renderRecsPanel();
+        }
 
         // Dim unaffordable toolbar items
         const money = Economy.getMoney();
         document.querySelectorAll('.item-btn').forEach(btn => {
             const itemKey = btn.dataset.item;
             const def = BUILDINGS[itemKey];
-            if (def) {
+            if (def && !btn.classList.contains('locked')) {
                 btn.classList.toggle('unaffordable', money < def.cost);
             }
         });
@@ -155,13 +376,13 @@ const UI = (() => {
             html += '<div class="info-row"><span class="info-label">Queue</span><span class="info-val">' + (obj.queue?.length || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Riders</span><span class="info-val">' + (obj.riders?.length || 0) + '/' + (def.capacity || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Total Riders</span><span class="info-val">' + (obj.totalRiders || 0) + '</span></div>';
-            html += '<div class="info-row"><span class="info-label">Revenue</span><span class="info-val positive">$' + formatMoney(obj.revenue || 0).slice(1) + '</span></div>';
+            html += '<div class="info-row"><span class="info-label">Revenue</span><span class="info-val positive">' + formatMoney(obj.revenue || 0) + '</span></div>';
         }
 
         if (def.category === 'food') {
             html += '<div class="info-row"><span class="info-label">Price</span><span class="info-val">$' + (def.foodPrice || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Sales</span><span class="info-val">' + (obj.totalRiders || 0) + '</span></div>';
-            html += '<div class="info-row"><span class="info-label">Revenue</span><span class="info-val positive">$' + formatMoney(obj.revenue || 0).slice(1) + '</span></div>';
+            html += '<div class="info-row"><span class="info-label">Revenue</span><span class="info-val positive">' + formatMoney(obj.revenue || 0) + '</span></div>';
         }
 
         if (def.beauty) {
@@ -234,6 +455,7 @@ const UI = (() => {
         updateHUD,
         showObjectInfo,
         refreshInfoPanel,
+        refreshToolbar,
         showToast,
         cancelBuild,
         getSelectedItem,

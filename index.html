@@ -32,6 +32,10 @@
             </div>
             <div class="hud-section" id="hud-center">
                 <span id="park-name">Parkopia</span>
+                <div class="level-badge" id="hud-level">
+                    <span id="level-value">Lv1</span>
+                    <div class="xp-bar"><div class="xp-bar-fill" id="xp-bar-fill"></div></div>
+                </div>
             </div>
             <div class="hud-section" id="hud-right">
                 <div class="hud-item" id="hud-date">
@@ -43,6 +47,8 @@
                     <button class="speed-btn" data-speed="3">&#9654;&#9654;&#9654;</button>
                     <button class="speed-btn" data-speed="0">&#10074;&#10074;</button>
                 </div>
+                <button class="hud-action-btn" id="btn-stats" title="Park Statistics">&#128202;</button>
+                <button class="hud-action-btn" id="btn-recs" title="Recommendations">&#128161;</button>
             </div>
         </div>
 
@@ -86,6 +92,20 @@
             <div id="info-content"></div>
         </div>
 
+        <!-- Statistics Panel -->
+        <div id="stats-panel" class="overlay-panel hidden">
+            <button id="stats-close" class="panel-close">&times;</button>
+            <h3 class="panel-title">&#128202; Park Statistics</h3>
+            <div id="stats-content" class="panel-content"></div>
+        </div>
+
+        <!-- Recommendations Panel -->
+        <div id="recs-panel" class="overlay-panel hidden">
+            <button id="recs-close" class="panel-close">&times;</button>
+            <h3 class="panel-title">&#128161; Recommendations</h3>
+            <div id="recs-content" class="panel-content"></div>
+        </div>
+
         <!-- Build Cost Preview -->
         <div id="build-preview" class="hidden">
             <span id="preview-name"></span>
@@ -102,6 +122,8 @@
     <script src="js/world.js"></script>
     <script src="js/guests.js"></script>
     <script src="js/economy.js"></script>
+    <script src="js/levels.js"></script>
+    <script src="js/stats.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/game.js"></script>
 </body>

@@ -28,7 +28,8 @@ const Guests = (() => {
     function spawnGuest() {
         const entrance = World.getEntrancePos();
         if (!entrance) return null;
-        if (guests.length >= CONFIG.MAX_GUESTS) return null;
+        const maxGuests = (typeof Levels !== 'undefined') ? Levels.getMaxGuests() : CONFIG.MAX_GUESTS;
+        if (guests.length >= maxGuests) return null;
 
         const color = GUEST_COLORS[Math.floor(Math.random() * GUEST_COLORS.length)];
         const guest = {
@@ -399,6 +400,7 @@ const Guests = (() => {
                     g.targetObj.revenue = (g.targetObj.revenue || 0) + price;
                     g.targetObj.totalRiders = (g.targetObj.totalRiders || 0) + 1;
                     Economy.addIncome(price, 'Food sale');
+                    if (typeof Levels !== 'undefined') Levels.addXP(1, 'food');
                 } else {
                     g.state = STATES.WANDERING;
                     g.wanderTimer = 30;
@@ -511,6 +513,7 @@ const Guests = (() => {
                     ride.revenue = (ride.revenue || 0) + price;
                     ride.totalRiders = (ride.totalRiders || 0) + 1;
                     Economy.addIncome(price, 'Ride ticket');
+                    if (typeof Levels !== 'undefined') Levels.addXP(2, 'ride');
                 }
             }
         }

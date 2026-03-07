@@ -33,6 +33,9 @@ const Game = (() => {
     // Placement flash effects
     let placeFlashes = []; // { x, y, alpha, sizeW, sizeH }
 
+    // Guest tooltip
+    let hoveredGuest = null;
+
     // ---- Coordinate transforms ----
     function worldToScreen(wx, wy) {
         const sx = (wx - wy) * (TW / 2);
@@ -63,6 +66,7 @@ const Game = (() => {
         World.init();
         Economy.reset();
         Guests.reset();
+        Levels.reset();
         UI.init();
 
         // Center camera slightly above entrance for a good overview
@@ -162,6 +166,9 @@ const Game = (() => {
         mouseX = e.clientX;
         mouseY = e.clientY;
         hoveredTile = screenToWorld(e.clientX, e.clientY);
+
+        // Detect guest under cursor
+        hoveredGuest = getGuestAtScreen(e.clientX, e.clientY);
 
         if (mouseDown && mouseDragStart) {
             if (UI.isBuildMode() || UI.isDemolishMode()) {
@@ -540,6 +547,11 @@ const Game = (() => {
             }
         }
 
+        // ---- Guest hover tooltip ----
+        if (hoveredGuest && !UI.isBuildMode() && !UI.isDemolishMode()) {
+            renderGuestTooltip(hoveredGuest);
+        }
+
         // ---- Placement flash effects ----
         for (let i = placeFlashes.length - 1; i >= 0; i--) {
             const f = placeFlashes[i];
@@ -622,14 +634,194 @@ const Game = (() => {
         ctx.restore();
     }
 
+    // ---- Guest hover detection ----
+    function getGuestAtScreen(sx, sy) {
+        const allGuests = Guests.getAll();
+        let closest = null;
+        let closestDist = 20; // pixel radius for detection
+
+        for (const g of allGuests) {
+            if (g.state === Guests.STATES.RIDING) continue;
+            const gx = g.x + g.px;
+            const gy = g.y + g.py;
+            const sp = worldToScreen(gx + 0.5, gy + 0.5);
+            const dx = sx - sp.x;
+            const dy = sy - (sp.y - 10 * zoom); // offset for sprite center
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closest = g;
+            }
+        }
+        return closest;
+    }
+
+    function getGuestThought(g) {
+        const thoughts = [];
+        const STATES = Guests.STATES;
+
+        // Needs-based thoughts
+        if (g.hunger > 75) thoughts.push({ icon: '🍔', text: "I'm starving!", priority: 3 });
+        else if (g.hunger > 55) thoughts.push({ icon: '🍕', text: 'Getting hungry...', priority: 1 });
+
+        if (g.thirst > 80) thoughts.push({ icon: '🥤', text: 'So thirsty!', priority: 3 });
+        else if (g.thirst > 60) thoughts.push({ icon: '💧', text: 'Need a drink', priority: 1 });
+
+        if (g.bathroom > 80) thoughts.push({ icon: '🚻', text: 'Need a restroom NOW!', priority: 4 });
+        else if (g.bathroom > 60) thoughts.push({ icon: '🚻', text: 'Looking for a restroom', priority: 2 });
+
+        if (g.energy < 20) thoughts.push({ icon: '😴', text: 'So tired...', priority: 2 });
+        else if (g.energy < 35) thoughts.push({ icon: '💤', text: 'Need to sit down', priority: 1 });
+
+        // State-based thoughts
+        if (g.state === STATES.QUEUING) {
+            if (g.waitTimer > g.patience * 0.7) thoughts.push({ icon: '😤', text: 'This queue is too long!', priority: 3 });
+            else thoughts.push({ icon: '⏳', text: 'Waiting in line...', priority: 0 });
+        }
+        if (g.state === STATES.RIDING) thoughts.push({ icon: '🎢', text: 'Wheee!', priority: 0 });
+        if (g.state === STATES.EATING) thoughts.push({ icon: '😋', text: 'Yummy!', priority: 0 });
+        if (g.state === STATES.SITTING) thoughts.push({ icon: '😌', text: 'Nice to rest', priority: 0 });
+        if (g.state === STATES.LEAVING) thoughts.push({ icon: '👋', text: 'Time to go home', priority: 0 });
+
+        // Happiness-based thoughts
+        if (g.happiness > 85) thoughts.push({ icon: '😄', text: 'Best park ever!', priority: 0 });
+        else if (g.happiness > 65) thoughts.push({ icon: '🙂', text: 'Having a good time', priority: 0 });
+        else if (g.happiness < 25) thoughts.push({ icon: '😡', text: 'This park is awful!', priority: 3 });
+        else if (g.happiness < 40) thoughts.push({ icon: '😕', text: 'Not having fun...', priority: 2 });
+
+        // Ride desire
+        if (g.state === STATES.WANDERING && g.ridesRidden === 0) {
+            thoughts.push({ icon: '🎡', text: 'Want to ride something!', priority: 1 });
+        }
+
+        if (g.state === STATES.GOING_TO_RIDE && g.targetObj) {
+            const def = BUILDINGS[g.targetObj.type];
+            thoughts.push({ icon: '🎠', text: `Heading to ${def?.name || 'a ride'}`, priority: 0 });
+        }
+        if (g.state === STATES.GOING_TO_FOOD && g.targetObj) {
+            const def = BUILDINGS[g.targetObj.type];
+            thoughts.push({ icon: '🍽️', text: `Going to ${def?.name || 'eat'}`, priority: 0 });
+        }
+
+        // Pick highest priority thought
+        thoughts.sort((a, b) => b.priority - a.priority);
+        return thoughts[0] || { icon: '💭', text: 'Just looking around', priority: 0 };
+    }
+
+    function renderGuestTooltip(g) {
+        const gx = g.x + g.px;
+        const gy = g.y + g.py;
+        const sp = worldToScreen(gx + 0.5, gy + 0.5);
+
+        const thought = getGuestThought(g);
+
+        // Tooltip background
+        const tooltipW = 180;
+        const tooltipH = 72;
+        const tx = sp.x - tooltipW / 2;
+        const ty = sp.y - 28 * zoom - tooltipH - 10;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        roundRect(ctx, tx + 2, ty + 2, tooltipW, tooltipH, 8);
+        ctx.fill();
+
+        // Background
+        ctx.fillStyle = 'rgba(20, 20, 40, 0.95)';
+        roundRect(ctx, tx, ty, tooltipW, tooltipH, 8);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(247, 201, 72, 0.5)';
+        ctx.lineWidth = 1;
+        roundRect(ctx, tx, ty, tooltipW, tooltipH, 8);
+        ctx.stroke();
+
+        // Arrow
+        ctx.fillStyle = 'rgba(20, 20, 40, 0.95)';
+        ctx.beginPath();
+        ctx.moveTo(sp.x - 6, ty + tooltipH);
+        ctx.lineTo(sp.x, ty + tooltipH + 6);
+        ctx.lineTo(sp.x + 6, ty + tooltipH);
+        ctx.closePath();
+        ctx.fill();
+
+        // Guest name & ID
+        ctx.fillStyle = '#f7c948';
+        ctx.font = 'bold 11px Fredoka, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Guest #${g.id}`, tx + 10, ty + 15);
+
+        // Thought
+        ctx.fillStyle = '#e8e8f0';
+        ctx.font = '11px Fredoka, sans-serif';
+        ctx.fillText(`${thought.icon} ${thought.text}`, tx + 10, ty + 32);
+
+        // Mini stat bars
+        const barY = ty + 42;
+        const barW = 36;
+        const barH = 5;
+        const barGap = 4;
+        const labels = [
+            { label: '😊', val: g.happiness / 100, color: '#4ecdc4' },
+            { label: '🍔', val: 1 - g.hunger / 100, color: '#f7c948' },
+            { label: '💧', val: 1 - g.thirst / 100, color: '#74b9ff' },
+            { label: '⚡', val: g.energy / 100, color: '#ff9ff3' },
+        ];
+
+        labels.forEach((stat, i) => {
+            const bx = tx + 10 + i * (barW + barGap + 12);
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#888';
+            ctx.fillText(stat.label, bx, barY + 4);
+
+            // Bar background
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            roundRect(ctx, bx + 13, barY - 2, barW, barH, 2);
+            ctx.fill();
+
+            // Bar fill
+            ctx.fillStyle = stat.color;
+            const fillW = Math.max(1, barW * Math.max(0, Math.min(1, stat.val)));
+            roundRect(ctx, bx + 13, barY - 2, fillW, barH, 2);
+            ctx.fill();
+        });
+
+        // Rides ridden
+        ctx.fillStyle = '#8888aa';
+        ctx.font = '9px Fredoka, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Rides: ${g.ridesRidden} | Spent: $${g.moneySpent}`, tx + 10, ty + 65);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
     function setSpeed(s) {
         gameSpeed = s;
     }
+
+    function getTick() { return tick; }
+    function getWorldToScreen() { return worldToScreen; }
+    function getScreenToWorld() { return screenToWorld; }
 
     // Start the game
     window.addEventListener('DOMContentLoaded', init);
 
     return {
         setSpeed,
+        getTick,
+        getWorldToScreen,
+        getScreenToWorld,
     };
 })();
