@@ -428,13 +428,40 @@ const UI = (() => {
         html += '<div class="info-row"><span class="info-label">Description</span><span class="info-val">' + (def.description || '') + '</span></div>';
 
         if (def.category === 'rides') {
-            html += '<div class="info-row"><span class="info-label">Excitement</span><span class="info-val">' + (def.excitement || 0) + '/10</span></div>';
+            // Coaster station: show dynamic excitement and track info
+            if (def.isCoasterStation) {
+                const dynamicExcitement = World.getCoasterExcitement(obj);
+                const tracks = World.getConnectedTracks(obj);
+                const isCircuit = World.validateCircuit(obj);
+                const circuitStatus = isCircuit
+                    ? '<span style="color:#4ecdc4">✓ Circuit Complete</span>'
+                    : '<span style="color:#f7c948">○ Open Track</span>';
+
+                html += '<div class="info-row"><span class="info-label">Excitement</span><span class="info-val">' + dynamicExcitement + '/10</span></div>';
+                html += '<div class="info-row"><span class="info-label">Track Pieces</span><span class="info-val">' + tracks.length + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Circuit</span><span class="info-val">' + circuitStatus + '</span></div>';
+            } else {
+                html += '<div class="info-row"><span class="info-label">Excitement</span><span class="info-val">' + (def.excitement || 0) + '/10</span></div>';
+            }
             html += '<div class="info-row"><span class="info-label">Capacity</span><span class="info-val">' + (def.capacity || 0) + '</span></div>';
             html += buildPriceRow('Ticket Price', obj);
             html += '<div class="info-row"><span class="info-label">Queue</span><span class="info-val">' + (obj.queue?.length || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Riders</span><span class="info-val">' + (obj.riders?.length || 0) + '/' + (def.capacity || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Total Riders</span><span class="info-val">' + (obj.totalRiders || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Revenue</span><span class="info-val positive">' + formatMoney(obj.revenue || 0) + '</span></div>';
+        }
+
+        if (def.isTrack) {
+            const station = World.findStationForTrack(obj);
+            html += '<div class="info-row"><span class="info-label">Excitement Bonus</span><span class="info-val">+' + (def.excitementBonus || 0) + '</span></div>';
+            if (station) {
+                const dynamicExcitement = World.getCoasterExcitement(station);
+                const trackCount = World.getConnectedTracks(station).length;
+                html += '<div class="info-row"><span class="info-label">Connected Station</span><span class="info-val">Yes (' + trackCount + ' tracks)</span></div>';
+                html += '<div class="info-row"><span class="info-label">Coaster Excitement</span><span class="info-val">' + dynamicExcitement + '/10</span></div>';
+            } else {
+                html += '<div class="info-row"><span class="info-label">Connected Station</span><span class="info-val" style="color:#f7c948">Not connected</span></div>';
+            }
         }
 
         if (def.category === 'food') {

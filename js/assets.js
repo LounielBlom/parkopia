@@ -388,6 +388,163 @@ const Assets = (() => {
         return c;
     }
 
+    // ---- Pond ----
+    function renderPond() {
+        const c = createCanvas(TW + 10, TH + 14);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 4;
+        // Water
+        ctx.fillStyle = '#5098C8';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 6, 24, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#4088B8';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 6, 24, 10, 0, 0, Math.PI);
+        ctx.fill();
+        // Shimmer
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx - 10, base - 7);
+        ctx.lineTo(cx - 4, base - 9);
+        ctx.moveTo(cx + 2, base - 5);
+        ctx.lineTo(cx + 8, base - 7);
+        ctx.stroke();
+        // Lily pad
+        ctx.fillStyle = '#4a8c3a';
+        ctx.beginPath();
+        ctx.ellipse(cx + 8, base - 8, 5, 3, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        // Pink flower on lily
+        ctx.fillStyle = '#FF88AA';
+        ctx.beginPath();
+        ctx.arc(cx + 8, base - 10, 2, 0, Math.PI * 2);
+        ctx.fill();
+        return c;
+    }
+
+    // ---- Topiary ----
+    function renderTopiary() {
+        const c = createCanvas(TW + 6, TH + 36);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 6;
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.beginPath();
+        ctx.ellipse(cx, base, 10, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Pot
+        ctx.fillStyle = '#A06030';
+        ctx.beginPath();
+        ctx.moveTo(cx - 7, base - 2);
+        ctx.lineTo(cx - 5, base - 12);
+        ctx.lineTo(cx + 5, base - 12);
+        ctx.lineTo(cx + 7, base - 2);
+        ctx.closePath();
+        ctx.fill();
+        // Stem
+        ctx.fillStyle = '#6B4C14';
+        ctx.fillRect(cx - 1.5, base - 28, 3, 16);
+        // Sphere top
+        ctx.fillStyle = '#2d7a2a';
+        ctx.beginPath();
+        ctx.arc(cx, base - 32, 10, 0, Math.PI * 2);
+        ctx.fill();
+        // Highlight
+        ctx.fillStyle = '#3d9a3a';
+        ctx.beginPath();
+        ctx.arc(cx - 3, base - 35, 5, 0, Math.PI * 2);
+        ctx.fill();
+        return c;
+    }
+
+    // ---- Rose Garden ----
+    function renderRoseGarden() {
+        const c = createCanvas(TW + 8, TH + 18);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 4;
+        // Soil
+        drawDiamond(ctx, 6, base - TH / 2 - 4, TW - 8, TH / 2 + 4, '#6B5335', '#5B4325');
+        // Rose bushes - clusters of red/pink/white flowers
+        const roseColors = ['#E84040', '#FF6080', '#E84040', '#FF8888', '#CC2020', '#FF6060', '#E05050', '#E84040', '#FF7070'];
+        for (let i = 0; i < 9; i++) {
+            const fx = cx - 14 + (i % 3) * 12 + (Math.floor(i / 3) % 2) * 4;
+            const fy = base - 10 - Math.floor(i / 3) * 5;
+            // Leaves
+            ctx.fillStyle = '#2d6a2a';
+            ctx.beginPath();
+            ctx.ellipse(fx, fy + 1, 5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Rose
+            ctx.fillStyle = roseColors[i];
+            ctx.beginPath();
+            ctx.arc(fx, fy - 1, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.arc(fx - 1, fy - 2, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        return c;
+    }
+
+    // ---- Clock Tower ----
+    function renderClockTower() {
+        const w = TW * 2 + 10, h = TH * 2 + 100;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 12;
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.beginPath();
+        ctx.ellipse(cx, base, 22, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Base
+        drawIsoBox(ctx, cx - 18, base - 20, 36, 18, 12, '#C0B8A0', '#A09880', '#B0A890');
+        // Tower body
+        ctx.fillStyle = '#B8B0A0';
+        ctx.fillRect(cx - 10, base - 80, 20, 60);
+        ctx.fillStyle = '#A8A090';
+        ctx.fillRect(cx - 10, base - 80, 10, 60);
+        // Clock face
+        ctx.fillStyle = '#FFFFF0';
+        ctx.beginPath();
+        ctx.arc(cx, base - 60, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, base - 60, 8, 0, Math.PI * 2);
+        ctx.stroke();
+        // Clock hands
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, base - 60);
+        ctx.lineTo(cx, base - 66);
+        ctx.moveTo(cx, base - 60);
+        ctx.lineTo(cx + 4, base - 58);
+        ctx.stroke();
+        // Roof
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.moveTo(cx, base - 94);
+        ctx.lineTo(cx + 14, base - 78);
+        ctx.lineTo(cx - 14, base - 78);
+        ctx.closePath();
+        ctx.fill();
+        // Spire
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(cx, base - 100);
+        ctx.lineTo(cx + 3, base - 94);
+        ctx.lineTo(cx - 3, base - 94);
+        ctx.closePath();
+        ctx.fill();
+        return c;
+    }
+
     // ---- Multi-tile rides ----
     function renderCarousel(frame = 0) {
         const w = TW * 2 + 10, h = TH * 2 + 60;
@@ -822,6 +979,509 @@ const Assets = (() => {
         return c;
     }
 
+    // ---- Swing Ride ----
+    function renderSwingRide(frame = 0) {
+        const w = TW * 2 + 10, h = TH * 2 + 60;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 12;
+        // Platform
+        ctx.fillStyle = '#A0A0B0';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 4, 36, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#8888A0';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 4, 36, 16, 0, 0, Math.PI);
+        ctx.fill();
+        // Center pole
+        ctx.fillStyle = '#6070A0';
+        ctx.fillRect(cx - 3, base - 54, 6, 50);
+        // Top disc
+        ctx.fillStyle = '#5060A0';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 50, 30, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Swings
+        const swingColors = ['#E84040', '#4080E8', '#E8C040', '#40C080', '#E860A0', '#60A0E8'];
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2 + frame * 0.025;
+            const swing = Math.sin(frame * 0.03 + i) * 6;
+            const sx = cx + Math.cos(angle) * 26;
+            const sy = base - 50 + Math.sin(angle) * 7;
+            // Chain
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + swing, sy + 22);
+            ctx.stroke();
+            // Seat
+            ctx.fillStyle = swingColors[i];
+            ctx.beginPath();
+            ctx.arc(sx + swing, sy + 22, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        // Top ornament
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(cx, base - 56, 4, 0, Math.PI * 2);
+        ctx.fill();
+        return c;
+    }
+
+    // ---- Pirate Ship ----
+    function renderPirateShip(frame = 0) {
+        const w = TW * 3 + 10, h = TH * 2 + 60;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 12;
+        // Support frame
+        ctx.fillStyle = '#6070A0';
+        ctx.fillRect(cx - 3, base - 50, 6, 46);
+        ctx.strokeStyle = '#5060A0';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx - 30, base);
+        ctx.lineTo(cx, base - 50);
+        ctx.lineTo(cx + 30, base);
+        ctx.stroke();
+        // Ship - swinging
+        const swingAngle = Math.sin(frame * 0.03) * 0.3;
+        ctx.save();
+        ctx.translate(cx, base - 46);
+        ctx.rotate(swingAngle);
+        // Hull
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.moveTo(-30, 0);
+        ctx.quadraticCurveTo(-35, 14, -20, 20);
+        ctx.lineTo(20, 20);
+        ctx.quadraticCurveTo(35, 14, 30, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#6B3510';
+        ctx.beginPath();
+        ctx.moveTo(-30, 0);
+        ctx.quadraticCurveTo(-35, 14, -20, 20);
+        ctx.lineTo(0, 20);
+        ctx.lineTo(0, 0);
+        ctx.closePath();
+        ctx.fill();
+        // Deck
+        ctx.fillStyle = '#C8A060';
+        ctx.fillRect(-26, -2, 52, 4);
+        // Mast
+        ctx.fillStyle = '#A08060';
+        ctx.fillRect(-2, -30, 4, 30);
+        // Flag
+        ctx.fillStyle = '#222';
+        ctx.beginPath();
+        ctx.moveTo(2, -28);
+        ctx.lineTo(16, -24);
+        ctx.lineTo(2, -18);
+        ctx.closePath();
+        ctx.fill();
+        // Skull on flag
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(9, -23, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        return c;
+    }
+
+    // ---- Go Karts ----
+    function renderGoKarts() {
+        const w = TW * 3 + 10, h = TH * 2 + 30;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 10;
+        // Track surface
+        ctx.fillStyle = '#555';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 10, 50, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Inner grass
+        ctx.fillStyle = '#5cb852';
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 10, 30, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Track lines
+        ctx.strokeStyle = '#FFF';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 10, 40, 17, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Karts
+        const karts = [
+            { angle: 0.5, color: '#E84040' },
+            { angle: 2.0, color: '#4080E8' },
+            { angle: 3.8, color: '#E8C040' },
+            { angle: 5.2, color: '#40C080' },
+        ];
+        for (const k of karts) {
+            const kx = cx + Math.cos(k.angle) * 40;
+            const ky = base - 10 + Math.sin(k.angle) * 17;
+            ctx.fillStyle = k.color;
+            ctx.beginPath();
+            ctx.ellipse(kx, ky, 5, 3, k.angle, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(kx + 1, ky + 1, 5, 3, k.angle, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        // Barrier
+        ctx.strokeStyle = '#FF4040';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(cx, base - 10, 52, 24, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        return c;
+    }
+
+    // ---- Haunted House ----
+    function renderHauntedHouse() {
+        const w = TW * 3 + 20, h = TH * 3 + 80;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 14;
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath();
+        ctx.ellipse(cx, base, 40, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Main building
+        drawIsoBox(ctx, cx - 30, base - 40, 60, 30, 28, '#3a3040', '#2a2030', '#322838');
+        // Roof
+        ctx.fillStyle = '#2a1830';
+        ctx.beginPath();
+        ctx.moveTo(cx, base - 68);
+        ctx.lineTo(cx + 36, base - 38);
+        ctx.lineTo(cx - 36, base - 38);
+        ctx.closePath();
+        ctx.fill();
+        // Tower
+        ctx.fillStyle = '#3a3040';
+        ctx.fillRect(cx + 10, base - 76, 14, 36);
+        ctx.fillStyle = '#2a2030';
+        ctx.fillRect(cx + 10, base - 76, 7, 36);
+        // Tower roof
+        ctx.fillStyle = '#2a1830';
+        ctx.beginPath();
+        ctx.moveTo(cx + 17, base - 84);
+        ctx.lineTo(cx + 28, base - 74);
+        ctx.lineTo(cx + 6, base - 74);
+        ctx.closePath();
+        ctx.fill();
+        // Windows (glowing)
+        ctx.fillStyle = '#88FF88';
+        ctx.globalAlpha = 0.6;
+        ctx.fillRect(cx - 16, base - 24, 6, 8);
+        ctx.fillRect(cx + 10, base - 24, 6, 8);
+        ctx.fillRect(cx + 14, base - 64, 6, 8);
+        ctx.globalAlpha = 1;
+        // Door
+        ctx.fillStyle = '#1a1020';
+        ctx.beginPath();
+        ctx.moveTo(cx - 5, base - 4);
+        ctx.lineTo(cx - 5, base - 16);
+        ctx.arc(cx, base - 16, 5, Math.PI, 0);
+        ctx.lineTo(cx + 5, base - 4);
+        ctx.closePath();
+        ctx.fill();
+        return c;
+    }
+
+    // ---- Water Slide ----
+    function renderWaterSlide() {
+        const w = TW * 3 + 20, h = TH * 3 + 100;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 14;
+        // Pool at bottom
+        ctx.fillStyle = '#4098D0';
+        ctx.beginPath();
+        ctx.ellipse(cx - 20, base - 4, 24, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#3088C0';
+        ctx.beginPath();
+        ctx.ellipse(cx - 20, base - 4, 24, 10, 0, 0, Math.PI);
+        ctx.fill();
+        // Tower supports
+        ctx.fillStyle = '#6080A0';
+        ctx.fillRect(cx + 20, base - 80, 5, 76);
+        ctx.fillRect(cx + 30, base - 80, 5, 76);
+        ctx.fillStyle = '#5070A0';
+        ctx.fillRect(cx + 20, base - 80, 3, 76);
+        // Cross braces
+        ctx.strokeStyle = '#5070A0';
+        ctx.lineWidth = 2;
+        for (let y = 0; y < 3; y++) {
+            const by = base - 20 - y * 20;
+            ctx.beginPath();
+            ctx.moveTo(cx + 20, by);
+            ctx.lineTo(cx + 35, by - 10);
+            ctx.stroke();
+        }
+        // Slide tube
+        ctx.strokeStyle = '#E84040';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx + 26, base - 76);
+        ctx.bezierCurveTo(cx + 20, base - 50, cx - 10, base - 40, cx - 20, base - 10);
+        ctx.stroke();
+        // Slide highlight
+        ctx.strokeStyle = '#FF6060';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx + 26, base - 76);
+        ctx.bezierCurveTo(cx + 20, base - 50, cx - 10, base - 40, cx - 20, base - 10);
+        ctx.stroke();
+        // Platform at top
+        ctx.fillStyle = '#7090B0';
+        ctx.fillRect(cx + 16, base - 82, 24, 4);
+        // Railing
+        ctx.strokeStyle = '#8090A0';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + 16, base - 86);
+        ctx.lineTo(cx + 16, base - 82);
+        ctx.moveTo(cx + 40, base - 86);
+        ctx.lineTo(cx + 40, base - 82);
+        ctx.moveTo(cx + 16, base - 86);
+        ctx.lineTo(cx + 40, base - 86);
+        ctx.stroke();
+        // Splash particles
+        ctx.fillStyle = 'rgba(120, 200, 255, 0.6)';
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(cx - 20 + (i - 2) * 6, base - 10 - i * 2, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        return c;
+    }
+
+    // ---- Coaster Station ----
+    function renderCoasterStation() {
+        const w = TW * 2 + 10, h = TH * 2 + 50;
+        const c = createCanvas(w, h);
+        const ctx = c.getContext('2d');
+        const cx = w / 2, base = h - 12;
+        // Platform
+        drawIsoBox(ctx, cx - 30, base - 16, 60, 28, 8, '#888', '#666', '#777');
+        // Roof structure
+        ctx.fillStyle = '#E84040';
+        ctx.beginPath();
+        ctx.moveTo(cx - 34, base - 36);
+        ctx.lineTo(cx + 34, base - 36);
+        ctx.lineTo(cx + 30, base - 20);
+        ctx.lineTo(cx - 30, base - 20);
+        ctx.closePath();
+        ctx.fill();
+        // Support poles
+        ctx.fillStyle = '#555';
+        ctx.fillRect(cx - 28, base - 36, 3, 20);
+        ctx.fillRect(cx + 25, base - 36, 3, 20);
+        // Rails on platform
+        ctx.strokeStyle = '#C040C0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - 26, base - 8);
+        ctx.lineTo(cx + 26, base - 8);
+        ctx.moveTo(cx - 26, base - 4);
+        ctx.lineTo(cx + 26, base - 4);
+        ctx.stroke();
+        // Cart
+        ctx.fillStyle = '#4080E8';
+        ctx.beginPath();
+        ctx.roundRect(cx - 8, base - 12, 16, 8, 3);
+        ctx.fill();
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.roundRect(cx - 6, base - 10, 4, 4, 1);
+        ctx.fill();
+        // "BUILD" text
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 7px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('COASTER', cx, base - 26);
+        return c;
+    }
+
+    // ---- Track: Straight ----
+    function renderTrackStraight() {
+        const c = createCanvas(TW + 4, TH + 14);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 4;
+        // Rail bed
+        drawDiamond(ctx, 4, base - TH / 2 - 2, TW - 4, TH / 2 + 2, 'rgba(100,100,100,0.3)');
+        // Rails (magenta)
+        ctx.strokeStyle = '#C040C0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(4, base - TH / 4);
+        ctx.lineTo(cx, base - TH / 2);
+        ctx.lineTo(TW, base - TH / 4);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(4, base - TH / 4 + 5);
+        ctx.lineTo(cx, base - TH / 2 + 5);
+        ctx.lineTo(TW, base - TH / 4 + 5);
+        ctx.stroke();
+        // Ties
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 4; i++) {
+            const t = (i + 0.5) / 4;
+            const tx = 4 + t * (TW - 4);
+            const ty = base - TH / 4 + (t < 0.5 ? -t * TH / 2 : -(1 - t) * TH / 2);
+            ctx.beginPath();
+            ctx.moveTo(tx - 2, ty - 2);
+            ctx.lineTo(tx + 2, ty + 5);
+            ctx.stroke();
+        }
+        return c;
+    }
+
+    // ---- Track: Curve ----
+    function renderTrackCurve() {
+        const c = createCanvas(TW + 4, TH + 14);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 4;
+        // Rail bed
+        drawDiamond(ctx, 4, base - TH / 2 - 2, TW - 4, TH / 2 + 2, 'rgba(100,100,100,0.3)');
+        // Curved rails
+        ctx.strokeStyle = '#C040C0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(4, base - TH / 4);
+        ctx.quadraticCurveTo(cx, base - 2, cx, base - TH / 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(4 + 5, base - TH / 4 + 3);
+        ctx.quadraticCurveTo(cx + 3, base, cx + 3, base - TH / 2 + 3);
+        ctx.stroke();
+        return c;
+    }
+
+    // ---- Track: Slope ----
+    function renderTrackSlope() {
+        const c = createCanvas(TW + 4, TH + 30);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 4;
+        // Support pillars
+        ctx.fillStyle = '#666';
+        ctx.fillRect(cx - 12, base - 20, 3, 16);
+        ctx.fillRect(cx + 10, base - 24, 3, 20);
+        // Rail bed (elevated)
+        ctx.fillStyle = 'rgba(100,100,100,0.4)';
+        ctx.beginPath();
+        ctx.moveTo(4, base - 12);
+        ctx.lineTo(cx, base - 22);
+        ctx.lineTo(TW, base - 16);
+        ctx.lineTo(cx, base - 6);
+        ctx.closePath();
+        ctx.fill();
+        // Rails
+        ctx.strokeStyle = '#C040C0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(4, base - 14);
+        ctx.lineTo(cx, base - 24);
+        ctx.lineTo(TW, base - 18);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(4, base - 9);
+        ctx.lineTo(cx, base - 19);
+        ctx.lineTo(TW, base - 13);
+        ctx.stroke();
+        // Height arrow
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(cx + 16, base - 28);
+        ctx.lineTo(cx + 13, base - 24);
+        ctx.lineTo(cx + 19, base - 24);
+        ctx.closePath();
+        ctx.fill();
+        return c;
+    }
+
+    // ---- Arcade ----
+    function renderArcade() {
+        const c = createCanvas(TW + 16, TH + 40);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 6;
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.beginPath();
+        ctx.ellipse(cx, base, 18, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        drawIsoBox(ctx, cx - 16, base - 24, 32, 16, 16, '#2020A0', '#1818B0', '#2828C0');
+        // Neon sign
+        ctx.fillStyle = '#FF00FF';
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.roundRect(cx - 12, base - 32, 24, 8, 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 6px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('ARCADE', cx, base - 26);
+        // Pixel hearts on side
+        ctx.fillStyle = '#FF4040';
+        ctx.fillRect(cx - 10, base - 14, 3, 3);
+        ctx.fillRect(cx + 8, base - 14, 3, 3);
+        // Joystick icon
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(cx - 1, base - 16, 2, 6);
+        ctx.beginPath();
+        ctx.arc(cx, base - 18, 3, 0, Math.PI * 2);
+        ctx.fill();
+        return c;
+    }
+
+    // ---- Lounge ----
+    function renderLounge() {
+        const c = createCanvas(TW + 12, TH + 36);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, base = c.height - 6;
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.beginPath();
+        ctx.ellipse(cx, base, 16, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        drawIsoBox(ctx, cx - 14, base - 24, 28, 14, 16, '#E0D0C0', '#C0B0A0', '#D0C0B0');
+        // Cozy window
+        ctx.fillStyle = 'rgba(255,200,100,0.4)';
+        ctx.fillRect(cx - 8, base - 14, 16, 8);
+        // Window frame
+        ctx.strokeStyle = '#A09080';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx - 8, base - 14, 16, 8);
+        ctx.beginPath();
+        ctx.moveTo(cx, base - 14);
+        ctx.lineTo(cx, base - 6);
+        ctx.stroke();
+        // Roof
+        ctx.fillStyle = '#A06040';
+        ctx.beginPath();
+        ctx.moveTo(cx, base - 34);
+        ctx.lineTo(cx + 18, base - 22);
+        ctx.lineTo(cx - 18, base - 22);
+        ctx.closePath();
+        ctx.fill();
+        // Coffee cup sign
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.roundRect(cx - 3, base - 28, 6, 5, 1);
+        ctx.fill();
+        return c;
+    }
+
     // ---- Food Stalls ----
     function renderFoodStall(type) {
         const c = createCanvas(TW + 16, TH + 36);
@@ -833,6 +1493,10 @@ const Assets = (() => {
             drinks_booth: { roof: '#40A0E8', body: '#E0F0FF', accent: '#FFD700' },
             cotton_candy: { roof: '#CC88FF', body: '#FFF0FF', accent: '#FF88CC' },
             pizza_stand: { roof: '#FF6040', body: '#FFF8E0', accent: '#40A040' },
+            popcorn_cart: { roof: '#F0C040', body: '#FFF8E0', accent: '#E84040' },
+            taco_stand: { roof: '#40A040', body: '#FFF0D0', accent: '#FF6040' },
+            sushi_bar: { roof: '#304060', body: '#F0F5FF', accent: '#E84040' },
+            juice_bar: { roof: '#60C060', body: '#F0FFF0', accent: '#FF8040' },
         };
         const col = colors[type] || colors.burger_stand;
         // Shadow
@@ -1096,6 +1760,21 @@ const Assets = (() => {
         getInfoBooth: () => get('info_booth', renderInfoBooth),
         getFirstAid: () => get('first_aid', renderFirstAid),
         getEntrance: () => get('entrance', renderEntrance),
+        getPond: () => get('pond', renderPond),
+        getTopiary: () => get('topiary', renderTopiary),
+        getRoseGarden: () => get('rose_garden', renderRoseGarden),
+        getClockTower: () => get('clock_tower', renderClockTower),
+        getSwingRide: (f) => renderSwingRide(f),
+        getPirateShip: (f) => renderPirateShip(f),
+        getGoKarts: () => get('go_karts', renderGoKarts),
+        getHauntedHouse: () => get('haunted_house', renderHauntedHouse),
+        getWaterSlide: () => get('water_slide', renderWaterSlide),
+        getCoasterStation: () => get('coaster_station', renderCoasterStation),
+        getTrackStraight: () => get('track_straight', renderTrackStraight),
+        getTrackCurve: () => get('track_curve', renderTrackCurve),
+        getTrackSlope: () => get('track_slope', renderTrackSlope),
+        getArcade: () => get('arcade', renderArcade),
+        getLounge: () => get('lounge', renderLounge),
         getGuest: (color) => get('guest_' + color, renderGuest, color),
         getSelection: () => get('selection', renderSelection),
         getPlacementValid: () => get('pv', renderPlacementValid),
@@ -1131,6 +1810,25 @@ const Assets = (() => {
                 case 'info_booth': return this.getInfoBooth();
                 case 'first_aid': return this.getFirstAid();
                 case 'entrance': return this.getEntrance();
+                case 'swing_ride': return this.getSwingRide(frame || 0);
+                case 'pirate_ship': return this.getPirateShip(frame || 0);
+                case 'go_karts': return this.getGoKarts();
+                case 'haunted_house': return this.getHauntedHouse();
+                case 'water_slide': return this.getWaterSlide();
+                case 'coaster_station': return this.getCoasterStation();
+                case 'track_straight': return this.getTrackStraight();
+                case 'track_curve': return this.getTrackCurve();
+                case 'track_slope': return this.getTrackSlope();
+                case 'popcorn_cart': return this.getFoodStall('popcorn_cart');
+                case 'taco_stand': return this.getFoodStall('taco_stand');
+                case 'sushi_bar': return this.getFoodStall('sushi_bar');
+                case 'juice_bar': return this.getFoodStall('juice_bar');
+                case 'pond': return this.getPond();
+                case 'topiary': return this.getTopiary();
+                case 'rose_garden': return this.getRoseGarden();
+                case 'clock_tower': return this.getClockTower();
+                case 'arcade': return this.getArcade();
+                case 'lounge': return this.getLounge();
                 default: return this.getTree();
             }
         },

@@ -275,6 +275,162 @@ const World = (() => {
         return { width: W, height: H };
     }
 
+    // ---- Custom Coaster Track System ----
+
+    // Get all track pieces connected to a coaster station via BFS
+    function getConnectedTracks(station) {
+        if (!station || !BUILDINGS[station.type]?.isCoasterStation) return [];
+
+        const visited = new Set();
+        const tracks = [];
+        const queue = [];
+
+        // Seed BFS from all tiles occupied by the station
+        const sw = station.sizeW || 1;
+        const sh = station.sizeH || 1;
+        for (let dy = -1; dy <= sh; dy++) {
+            for (let dx = -1; dx <= sw; dx++) {
+                if (dx >= 0 && dx < sw && dy >= 0 && dy < sh) continue; // skip station tiles
+                const nx = station.originX + dx;
+                const ny = station.originY + dy;
+                const key = nx + ',' + ny;
+                if (!inBounds(nx, ny) || visited.has(key)) continue;
+                const obj = objects[ny][nx];
+                if (obj && BUILDINGS[obj.type]?.isTrack) {
+                    visited.add(key);
+                    tracks.push(obj);
+                    queue.push(obj);
+                }
+            }
+        }
+
+        // BFS through connected track pieces
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const cx = current.originX;
+            const cy = current.originY;
+            const neighbors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            for (const [ddx, ddy] of neighbors) {
+                const nx = cx + ddx;
+                const ny = cy + ddy;
+                const key = nx + ',' + ny;
+                if (!inBounds(nx, ny) || visited.has(key)) continue;
+                visited.add(key);
+                const obj = objects[ny][nx];
+                if (obj && BUILDINGS[obj.type]?.isTrack) {
+                    tracks.push(obj);
+                    queue.push(obj);
+                }
+            }
+        }
+
+        return tracks;
+    }
+
+    // Check if tracks form a circuit (loop back to station)
+    function validateCircuit(station) {
+        if (!station || !BUILDINGS[station.type]?.isCoasterStation) return false;
+        const tracks = getConnectedTracks(station);
+        if (tracks.length < 4) return false; // Need at least 4 tracks for a loop
+
+        // Check if any track piece is adjacent to the station on a DIFFERENT side
+        // than where it was first connected. We need at least 2 station-adjacent tracks.
+        const sw = station.sizeW || 1;
+        const sh = station.sizeH || 1;
+        const stationTiles = new Set();
+        for (let dy = 0; dy < sh; dy++) {
+            for (let dx = 0; dx < sw; dx++) {
+                stationTiles.add((station.originX + dx) + ',' + (station.originY + dy));
+            }
+        }
+
+        // Count how many tracks touch the station
+        let touchCount = 0;
+        for (const t of tracks) {
+            const neighbors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            for (const [ddx, ddy] of neighbors) {
+                const key = (t.originX + ddx) + ',' + (t.originY + ddy);
+                if (stationTiles.has(key)) {
+                    touchCount++;
+                    break; // count each track only once
+                }
+            }
+        }
+
+        // A circuit needs at least 2 different tracks touching the station
+        return touchCount >= 2;
+    }
+
+    // Calculate dynamic excitement for a coaster station
+    function getCoasterExcitement(station) {
+        if (!station || !BUILDINGS[station.type]?.isCoasterStation) {
+            const def = BUILDINGS[station?.type];
+            return def?.excitement || 0;
+        }
+
+        const baseDef = BUILDINGS[station.type];
+        let excitement = baseDef.excitement || 3;
+        const tracks = getConnectedTracks(station);
+
+        // Sum excitement bonuses from track pieces
+        for (const t of tracks) {
+            const tDef = BUILDINGS[t.type];
+            if (tDef?.excitementBonus) {
+                excitement += tDef.excitementBonus;
+            }
+        }
+
+        // Circuit bonus: +3 excitement if tracks form a complete loop
+        if (validateCircuit(station)) {
+            excitement += 3;
+        }
+
+        return Math.min(10, excitement); // Cap at 10
+    }
+
+    // Check if a position is adjacent to a track or coaster station
+    function isTrackAdjacent(x, y) {
+        const neighbors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+        for (const [dx, dy] of neighbors) {
+            const obj = getObject(x + dx, y + dy);
+            if (obj) {
+                const def = BUILDINGS[obj.type];
+                if (def?.isTrack || def?.isCoasterStation) return true;
+            }
+        }
+        return false;
+    }
+
+    // Find the station a track piece is connected to (if any)
+    function findStationForTrack(trackObj) {
+        if (!trackObj || !BUILDINGS[trackObj.type]?.isTrack) return null;
+
+        const visited = new Set();
+        const queue = [trackObj];
+        visited.add(trackObj.originX + ',' + trackObj.originY);
+
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const cx = current.originX;
+            const cy = current.originY;
+            const neighbors = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            for (const [ddx, ddy] of neighbors) {
+                const nx = cx + ddx;
+                const ny = cy + ddy;
+                const key = nx + ',' + ny;
+                if (!inBounds(nx, ny) || visited.has(key)) continue;
+                visited.add(key);
+                const obj = objects[ny][nx];
+                if (!obj) continue;
+                if (BUILDINGS[obj.type]?.isCoasterStation) return obj;
+                if (BUILDINGS[obj.type]?.isTrack) {
+                    queue.push(obj);
+                }
+            }
+        }
+        return null;
+    }
+
     return {
         init,
         getTerrain,
@@ -294,5 +450,10 @@ const World = (() => {
         getBeautyAt,
         hasTrashCanNear,
         getGridSize,
+        getConnectedTracks,
+        validateCircuit,
+        getCoasterExcitement,
+        isTrackAdjacent,
+        findStationForTrack,
     };
 })();

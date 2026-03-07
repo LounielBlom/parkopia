@@ -222,7 +222,7 @@ const Game = (() => {
         }
 
         // Quick-select categories
-        const catMap = { '1': 'paths', '2': 'rides', '3': 'food', '4': 'scenery', '5': 'buildings' };
+        const catMap = { '1': 'paths', '2': 'rides', '3': 'food', '4': 'scenery', '5': 'buildings', '6': 'coaster' };
         if (catMap[e.key]) {
             const btn = document.querySelector(`[data-category="${catMap[e.key]}"]`);
             if (btn) btn.click();
@@ -338,22 +338,33 @@ const Game = (() => {
 
         if (!World.canPlace(item, tile.x, tile.y)) return;
 
-        // For non-path buildings, require at least one edge tile adjacent to a path
+        // For non-path buildings, require adjacency check
         if (def.category !== 'paths') {
-            let hasPath = false;
-            const sw = def.size[0], sh = def.size[1];
-            outer: for (let dy = -1; dy <= sh; dy++) {
-                for (let dx = -1; dx <= sw; dx++) {
-                    // Only check border tiles (not interior)
-                    if (dx >= 0 && dx < sw && dy >= 0 && dy < sh) continue;
-                    if (World.isWalkable(tile.x + dx, tile.y + dy)) { hasPath = true; break outer; }
+            if (def.isTrack) {
+                // Track pieces must be adjacent to another track or a coaster station
+                if (!World.isTrackAdjacent(tile.x, tile.y)) {
+                    if (!isDraggingPlace || dragPlacedTiles.size === 0) {
+                        UI.showToast('Must be placed next to a track or station!', 'error');
+                    }
+                    return;
                 }
-            }
-            if (!hasPath) {
-                if (!isDraggingPlace || dragPlacedTiles.size === 0) {
-                    UI.showToast('Must be placed next to a path!', 'error');
+            } else {
+                // Regular buildings must be adjacent to a path
+                let hasPath = false;
+                const sw = def.size[0], sh = def.size[1];
+                outer: for (let dy = -1; dy <= sh; dy++) {
+                    for (let dx = -1; dx <= sw; dx++) {
+                        // Only check border tiles (not interior)
+                        if (dx >= 0 && dx < sw && dy >= 0 && dy < sh) continue;
+                        if (World.isWalkable(tile.x + dx, tile.y + dy)) { hasPath = true; break outer; }
+                    }
                 }
-                return;
+                if (!hasPath) {
+                    if (!isDraggingPlace || dragPlacedTiles.size === 0) {
+                        UI.showToast('Must be placed next to a path!', 'error');
+                    }
+                    return;
+                }
             }
         }
 
@@ -581,17 +592,22 @@ const Game = (() => {
                 const def = BUILDINGS[item];
                 if (def) {
                     const sw = def.size[0], sh = def.size[1];
-                    let pathOk = def.category === 'paths';
-                    if (!pathOk) {
-                        for (let dy = -1; dy <= sh && !pathOk; dy++) {
-                            for (let dx = -1; dx <= sw && !pathOk; dx++) {
-                                if (dx >= 0 && dx < sw && dy >= 0 && dy < sh) continue;
-                                if (World.isWalkable(hoveredTile.x + dx, hoveredTile.y + dy)) pathOk = true;
+                    let adjacencyOk = def.category === 'paths';
+                    if (!adjacencyOk) {
+                        if (def.isTrack) {
+                            // Track pieces need track/station adjacency
+                            adjacencyOk = World.isTrackAdjacent(hoveredTile.x, hoveredTile.y);
+                        } else {
+                            for (let dy = -1; dy <= sh && !adjacencyOk; dy++) {
+                                for (let dx = -1; dx <= sw && !adjacencyOk; dx++) {
+                                    if (dx >= 0 && dx < sw && dy >= 0 && dy < sh) continue;
+                                    if (World.isWalkable(hoveredTile.x + dx, hoveredTile.y + dy)) adjacencyOk = true;
+                                }
                             }
                         }
                     }
                     const valid = World.canPlace(item, hoveredTile.x, hoveredTile.y) &&
-                                  Economy.canAfford(def.cost) && pathOk;
+                                  Economy.canAfford(def.cost) && adjacencyOk;
 
                     for (let dy = 0; dy < sh; dy++) {
                         for (let dx = 0; dx < sw; dx++) {
@@ -678,7 +694,17 @@ const Game = (() => {
             if (g.waitTimer > g.patience * 0.7) thoughts.push({ icon: '😤', text: 'This queue is too long!', priority: 3 });
             else thoughts.push({ icon: '⏳', text: 'Waiting in line...', priority: 0 });
         }
-        if (g.state === STATES.RIDING) thoughts.push({ icon: '🎢', text: 'Wheee!', priority: 0 });
+        if (g.state === STATES.RIDING) {
+            const rideDef = BUILDINGS[g.targetObj?.type];
+            if (rideDef?.isCoasterStation) {
+                const excitement = World.getCoasterExcitement(g.targetObj);
+                if (excitement >= 8) thoughts.push({ icon: '🎢', text: 'AMAZING coaster!!!', priority: 1 });
+                else if (excitement >= 5) thoughts.push({ icon: '🎢', text: 'Great coaster!', priority: 0 });
+                else thoughts.push({ icon: '🎢', text: 'Nice little coaster', priority: 0 });
+            } else {
+                thoughts.push({ icon: '🎢', text: 'Wheee!', priority: 0 });
+            }
+        }
         if (g.state === STATES.EATING) thoughts.push({ icon: '😋', text: 'Yummy!', priority: 0 });
         if (g.state === STATES.SITTING) thoughts.push({ icon: '😌', text: 'Nice to rest', priority: 0 });
         if (g.state === STATES.LEAVING) thoughts.push({ icon: '👋', text: 'Time to go home', priority: 0 });

@@ -27,6 +27,7 @@ const Levels = (() => {
         tea_cups: 1,
         burger_stand: 1,
         ice_cream_cart: 1,
+        popcorn_cart: 1,
         tree: 1,
         bench: 1,
         trash_can: 1,
@@ -34,28 +35,46 @@ const Levels = (() => {
         // Level 2 — expanding the park
         wide_path: 2,
         bumper_cars: 2,
+        swing_ride: 2,
         drinks_booth: 2,
         flower_bed: 2,
         lamp: 2,
+        pond: 2,
         restroom: 2,
 
         // Level 3 — mid-tier attractions
         ferris_wheel: 3,
+        pirate_ship: 3,
+        go_karts: 3,
+        coaster_station: 3,
+        track_straight: 3,
+        track_curve: 3,
+        track_slope: 3,
         pizza_stand: 3,
         cotton_candy: 3,
+        taco_stand: 3,
+        juice_bar: 3,
         fountain: 3,
         hedge: 3,
+        topiary: 3,
         info_booth: 3,
+        arcade: 3,
 
         // Level 4 — thrilling rides & shops
         log_flume: 4,
         drop_tower: 4,
+        haunted_house: 4,
+        sushi_bar: 4,
         statue: 4,
+        rose_garden: 4,
         gift_shop: 4,
         first_aid: 4,
+        lounge: 4,
 
-        // Level 5 — flagship attraction
+        // Level 5 — flagship attractions
         roller_coaster: 5,
+        water_slide: 5,
+        clock_tower: 5,
     };
 
     function addXP(amount, source) {

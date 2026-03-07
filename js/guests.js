@@ -206,8 +206,9 @@ const Guests = (() => {
         if (basePrice > 0 && price > 0) {
             const priceRatio = price / basePrice;
             const def = BUILDINGS[ride.type];
-            // High-excitement rides tolerate higher prices
-            const excitementFactor = (def?.excitement || 1) / 10;
+            // High-excitement rides tolerate higher prices (use dynamic excitement for coasters)
+            const rideExcitement = def?.isCoasterStation ? World.getCoasterExcitement(ride) : (def?.excitement || 1);
+            const excitementFactor = rideExcitement / 10;
             // Happy guests are more willing to spend
             const happinessFactor = g.happiness / 100;
             // Skip chance: 0 at normal price, rising with premium markup
@@ -510,7 +511,9 @@ const Guests = (() => {
         if (g.actionTimer <= 0) {
             const def = BUILDINGS[g.targetObj?.type];
             if (def) {
-                g.happiness = Math.min(100, g.happiness + def.excitement * 3);
+                // Use dynamic excitement for coaster stations, static for everything else
+                const excitement = def.isCoasterStation ? World.getCoasterExcitement(g.targetObj) : (def.excitement || 0);
+                g.happiness = Math.min(100, g.happiness + excitement * 3);
                 g.energy = Math.max(0, g.energy - 5);
 
                 // Price satisfaction effect
