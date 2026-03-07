@@ -689,6 +689,16 @@ const Game = (() => {
         else if (g.happiness < 25) thoughts.push({ icon: '😡', text: 'This park is awful!', priority: 3 });
         else if (g.happiness < 40) thoughts.push({ icon: '😕', text: 'Not having fun...', priority: 2 });
 
+        // Price-related thoughts
+        const entranceFee = Economy.getEntranceFee();
+        if (entranceFee === 0) {
+            thoughts.push({ icon: '🎟️', text: 'Free admission — nice!', priority: 0 });
+        } else if (entranceFee >= 25) {
+            thoughts.push({ icon: '💸', text: 'This park is pricey!', priority: 2 });
+        } else if (entranceFee <= 3) {
+            thoughts.push({ icon: '🤑', text: 'What a deal to get in!', priority: 0 });
+        }
+
         // Ride desire
         if (g.state === STATES.WANDERING && g.ridesRidden === 0) {
             thoughts.push({ icon: '🎡', text: 'Want to ride something!', priority: 1 });

@@ -16,6 +16,8 @@ const UI = (() => {
         setupInfoPanel();
         setupParkName();
         setupOverlayButtons();
+        setupEntranceFee();
+        setupPriceEventDelegation();
         populateToolbarItems('paths');
     }
 
@@ -299,6 +301,43 @@ const UI = (() => {
         content.innerHTML = html;
     }
 
+    // ---- Entrance Fee Controls ----
+    function setupEntranceFee() {
+        const feeDown = document.getElementById('fee-down');
+        const feeUp = document.getElementById('fee-up');
+        if (feeDown) {
+            feeDown.addEventListener('click', (e) => {
+                e.stopPropagation();
+                Economy.setEntranceFee(Economy.getEntranceFee() - 1);
+            });
+        }
+        if (feeUp) {
+            feeUp.addEventListener('click', (e) => {
+                e.stopPropagation();
+                Economy.setEntranceFee(Economy.getEntranceFee() + 1);
+            });
+        }
+    }
+
+    // ---- Price Event Delegation on Info Panel ----
+    function setupPriceEventDelegation() {
+        const content = document.getElementById('info-content');
+        if (!content) return;
+
+        content.addEventListener('click', (e) => {
+            const btn = e.target.closest('.price-btn');
+            if (!btn || !inspectedObj) return;
+
+            e.stopPropagation();
+            const dir = parseInt(btn.dataset.dir);
+            if (isNaN(dir)) return;
+
+            const currentPrice = Economy.getEffectivePrice(inspectedObj);
+            Economy.setObjectPrice(inspectedObj, currentPrice + dir);
+            refreshInfoPanel();
+        });
+    }
+
     // ---- HUD Update ----
     function updateHUD() {
         document.getElementById('money-value').textContent = formatMoney(Economy.getMoney());
@@ -311,6 +350,10 @@ const UI = (() => {
             Guests.getCount() > 0 ? Math.round(avgHappy) + '%' : '--';
         document.getElementById('rating-value').textContent = Economy.getRating().toFixed(1);
         document.getElementById('date-value').textContent = 'Day ' + Economy.getDay();
+
+        // Entrance fee display
+        const feeVal = document.getElementById('fee-value');
+        if (feeVal) feeVal.textContent = '$' + Economy.getEntranceFee();
 
         // Level & XP bar
         if (typeof Levels !== 'undefined') {
@@ -362,6 +405,21 @@ const UI = (() => {
         }
     }
 
+    function buildPriceRow(label, obj) {
+        const price = Economy.getEffectivePrice(obj);
+        const base = Economy.getBasePrice(obj);
+        const isCustom = obj.customPrice !== undefined && obj.customPrice !== base;
+        const priceClass = isCustom ? ' price-custom' : '';
+        return `<div class="info-row">
+            <span class="info-label">${label}</span>
+            <span class="info-val price-control">
+                <button class="price-btn" data-dir="-1">−</button>
+                <span class="price-display${priceClass}">$${price}</span>
+                <button class="price-btn" data-dir="1">+</button>
+            </span>
+        </div>`;
+    }
+
     function buildInfoHTML(obj) {
         const def = BUILDINGS[obj.type];
         if (!def) return '';
@@ -372,7 +430,7 @@ const UI = (() => {
         if (def.category === 'rides') {
             html += '<div class="info-row"><span class="info-label">Excitement</span><span class="info-val">' + (def.excitement || 0) + '/10</span></div>';
             html += '<div class="info-row"><span class="info-label">Capacity</span><span class="info-val">' + (def.capacity || 0) + '</span></div>';
-            html += '<div class="info-row"><span class="info-label">Ticket Price</span><span class="info-val">$' + (def.ticketPrice || 0) + '</span></div>';
+            html += buildPriceRow('Ticket Price', obj);
             html += '<div class="info-row"><span class="info-label">Queue</span><span class="info-val">' + (obj.queue?.length || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Riders</span><span class="info-val">' + (obj.riders?.length || 0) + '/' + (def.capacity || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Total Riders</span><span class="info-val">' + (obj.totalRiders || 0) + '</span></div>';
@@ -380,7 +438,7 @@ const UI = (() => {
         }
 
         if (def.category === 'food') {
-            html += '<div class="info-row"><span class="info-label">Price</span><span class="info-val">$' + (def.foodPrice || 0) + '</span></div>';
+            html += buildPriceRow('Price', obj);
             html += '<div class="info-row"><span class="info-label">Sales</span><span class="info-val">' + (obj.totalRiders || 0) + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Revenue</span><span class="info-val positive">' + formatMoney(obj.revenue || 0) + '</span></div>';
         }

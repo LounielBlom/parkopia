@@ -14,6 +14,9 @@ const Economy = (() => {
     let totalGuestsEver = 0;
     let log = []; // recent transactions
 
+    // Adjustable entrance fee
+    let entranceFee = CONFIG.ENTRANCE_FEE;
+
     function addIncome(amount, source) {
         money += amount;
         totalIncome += amount;
@@ -39,11 +42,36 @@ const Economy = (() => {
         if (log.length > 50) log.shift();
     }
 
+    // ---- Entrance Fee ----
+    function getEntranceFee() { return entranceFee; }
+    function setEntranceFee(val) {
+        entranceFee = Math.max(0, Math.min(50, Math.round(val)));
+    }
+
+    // ---- Per-Object Pricing ----
+    function getEffectivePrice(obj) {
+        if (obj.customPrice !== undefined) return obj.customPrice;
+        const def = BUILDINGS[obj.type];
+        if (def?.ticketPrice !== undefined) return def.ticketPrice;
+        if (def?.foodPrice !== undefined) return def.foodPrice;
+        return 0;
+    }
+
+    function setObjectPrice(obj, price) {
+        const def = BUILDINGS[obj.type];
+        const basePrice = def?.ticketPrice ?? def?.foodPrice ?? 0;
+        // Clamp between 0 and 5x the base price (min $1 step)
+        obj.customPrice = Math.max(0, Math.min(basePrice * 5, Math.round(price)));
+    }
+
+    function getBasePrice(obj) {
+        const def = BUILDINGS[obj.type];
+        return def?.ticketPrice ?? def?.foodPrice ?? 0;
+    }
+
+    // ---- Update ----
     function update(tick) {
         tickInDay++;
-
-        // Entrance fees from new guests
-        // (handled elsewhere when guests spawn)
 
         // Upkeep costs
         if (tickInDay % CONFIG.UPKEEP_INTERVAL === 0) {
@@ -119,7 +147,16 @@ const Economy = (() => {
         // Better rating = more guests
         const baseRate = CONFIG.GUEST_SPAWN_RATE;
         const ratingFactor = Math.max(0.3, 1 - (parkRating / 5) * 0.7);
-        return Math.floor(baseRate * ratingFactor);
+
+        // Price elasticity: entrance fee affects demand
+        const feeRatio = entranceFee / CONFIG.ENTRANCE_FEE;
+        // At default price (ratio=1): priceFactor = 1.0 (no change)
+        // At free entry (ratio=0): priceFactor = 0.5 (2x faster spawns)
+        // At 2x price (ratio=2): priceFactor = 1.7 (70% slower)
+        // At 5x price (ratio=5): priceFactor = 3.0 (capped)
+        const priceFactor = Math.max(0.5, Math.min(3.0, 0.3 + 0.7 * feeRatio));
+
+        return Math.floor(baseRate * ratingFactor * priceFactor);
     }
 
     function getMoney() { return money; }
@@ -133,7 +170,7 @@ const Economy = (() => {
 
     function guestEntered() {
         totalGuestsEver++;
-        addIncome(CONFIG.ENTRANCE_FEE, 'Entrance fee');
+        addIncome(entranceFee, 'Entrance fee');
         if (typeof Levels !== 'undefined') Levels.addXP(1, 'entrance');
     }
 
@@ -150,6 +187,7 @@ const Economy = (() => {
         tickInDay = 0;
         totalGuestsEver = 0;
         log = [];
+        entranceFee = CONFIG.ENTRANCE_FEE;
     }
 
     return {
@@ -168,6 +206,11 @@ const Economy = (() => {
         getLog,
         guestEntered,
         getTotalGuestsEver,
+        getEntranceFee,
+        setEntranceFee,
+        getEffectivePrice,
+        setObjectPrice,
+        getBasePrice,
         reset,
     };
 })();

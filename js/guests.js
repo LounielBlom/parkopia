@@ -200,6 +200,26 @@ const Guests = (() => {
         const sorted = rides.slice().sort((a, b) => (a.queue?.length || 0) - (b.queue?.length || 0));
         const ride = sorted[Math.floor(Math.random() * Math.min(3, sorted.length))];
 
+        // Price elasticity check — guest may skip expensive rides
+        const price = Economy.getEffectivePrice(ride);
+        const basePrice = Economy.getBasePrice(ride);
+        if (basePrice > 0 && price > 0) {
+            const priceRatio = price / basePrice;
+            const def = BUILDINGS[ride.type];
+            // High-excitement rides tolerate higher prices
+            const excitementFactor = (def?.excitement || 1) / 10;
+            // Happy guests are more willing to spend
+            const happinessFactor = g.happiness / 100;
+            // Skip chance: 0 at normal price, rising with premium markup
+            const skipChance = Math.max(0,
+                (priceRatio - 1) * 0.5 * (1 - excitementFactor * 0.5) * (1 - happinessFactor * 0.3));
+            if (Math.random() < Math.min(0.9, skipChance)) {
+                g.happiness = Math.max(0, g.happiness - 3); // "Too expensive!"
+                wanderRandomly(g);
+                return;
+            }
+        }
+
         // Find a walkable tile adjacent to the ride
         const target = findAdjacentWalkable(ride);
         if (!target) {
@@ -227,10 +247,41 @@ const Guests = (() => {
 
         let target = null;
         if (preferDrinks) {
-            target = stalls.find(s => s.type === 'drinks_booth');
+            // Prefer drinks but check price tolerance
+            const drinksStalls = stalls.filter(s => s.type === 'drinks_booth');
+            for (const s of drinksStalls) {
+                const price = Economy.getEffectivePrice(s);
+                const base = Economy.getBasePrice(s);
+                const urgency = g.thirst / 100;
+                const maxRatio = 1.0 + urgency * 3.0;
+                if (base === 0 || price / base <= maxRatio) { target = s; break; }
+            }
         }
+
         if (!target) {
-            target = stalls[Math.floor(Math.random() * stalls.length)];
+            // Price-aware selection: filter by what the guest is willing to pay
+            const urgency = Math.max(g.hunger, g.thirst) / 100;
+            const candidates = stalls.filter(s => {
+                const price = Economy.getEffectivePrice(s);
+                const base = Economy.getBasePrice(s);
+                if (base === 0) return true;
+                const ratio = price / base;
+                // Urgent guests tolerate up to 4x price; moderate guests cap at 1.5x
+                const maxAcceptableRatio = 1.0 + urgency * 3.0;
+                return ratio <= maxAcceptableRatio;
+            });
+
+            if (candidates.length > 0) {
+                target = candidates[Math.floor(Math.random() * candidates.length)];
+            } else if (urgency > 0.8) {
+                // Desperate — eat anywhere regardless of price
+                target = stalls[Math.floor(Math.random() * stalls.length)];
+            } else {
+                // Everything too expensive, skip and lose a bit of happiness
+                g.happiness = Math.max(0, g.happiness - 2);
+                wanderRandomly(g);
+                return;
+            }
         }
 
         const walkable = findAdjacentWalkable(target);
@@ -394,13 +445,20 @@ const Guests = (() => {
                     g.hunger = Math.max(0, g.hunger - (def?.hungerRelief || 30));
                     g.thirst = Math.max(0, g.thirst - (def?.thirstRelief || 15));
                     if (def?.happinessBoost) g.happiness = Math.min(100, g.happiness + def.happinessBoost);
-                    // Pay for food
-                    const price = def?.foodPrice || 5;
+                    // Pay for food (effective price)
+                    const price = Economy.getEffectivePrice(g.targetObj);
                     g.moneySpent += price;
                     g.targetObj.revenue = (g.targetObj.revenue || 0) + price;
                     g.targetObj.totalRiders = (g.targetObj.totalRiders || 0) + 1;
                     Economy.addIncome(price, 'Food sale');
                     if (typeof Levels !== 'undefined') Levels.addXP(1, 'food');
+                    // Price satisfaction
+                    const foodBase = Economy.getBasePrice(g.targetObj);
+                    if (foodBase > 0) {
+                        const foodRatio = price / foodBase;
+                        if (foodRatio < 0.8) g.happiness = Math.min(100, g.happiness + 3);
+                        else if (foodRatio > 1.5) g.happiness = Math.max(0, g.happiness - 2);
+                    }
                 } else {
                     g.state = STATES.WANDERING;
                     g.wanderTimer = 30;
@@ -454,6 +512,20 @@ const Guests = (() => {
             if (def) {
                 g.happiness = Math.min(100, g.happiness + def.excitement * 3);
                 g.energy = Math.max(0, g.energy - 5);
+
+                // Price satisfaction effect
+                if (g.targetObj) {
+                    const price = Economy.getEffectivePrice(g.targetObj);
+                    const basePrice = Economy.getBasePrice(g.targetObj);
+                    if (basePrice > 0) {
+                        const priceRatio = price / basePrice;
+                        if (priceRatio < 0.8) {
+                            g.happiness = Math.min(100, g.happiness + 4); // Bargain!
+                        } else if (priceRatio > 1.5) {
+                            g.happiness = Math.max(0, g.happiness - 3); // Rip-off!
+                        }
+                    }
+                }
             }
             g.ridesRidden++;
             g.state = STATES.WANDERING;
@@ -507,8 +579,8 @@ const Guests = (() => {
                     g.state = STATES.RIDING;
                     g.actionTimer = ride.rideTimer;
                     g.targetObj = ride;
-                    // Pay for ride
-                    const price = def.ticketPrice || 5;
+                    // Pay for ride (effective price)
+                    const price = Economy.getEffectivePrice(ride);
                     g.moneySpent += price;
                     ride.revenue = (ride.revenue || 0) + price;
                     ride.totalRiders = (ride.totalRiders || 0) + 1;
