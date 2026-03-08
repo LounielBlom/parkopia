@@ -1385,13 +1385,16 @@ const Assets = (() => {
     function renderTrackDynamic(type, connKey) {
         const isSlope = type === 'track_slope';
         const isCurve = type === 'track_curve';
-        const heightBoost = isSlope ? 16 : 0;
+        const heightBoost = isSlope ? 32 : 0;
 
         const c = createCanvas(TW + 8, TH + 20 + heightBoost);
         const ctx = c.getContext('2d');
         const cx = c.width / 2;
         const base = c.height - 6;
-        const tileCenter = { x: cx, y: base - TH / 2 - heightBoost / 2 };
+        // Ground-level tile center (where normal tracks sit)
+        const groundCenter = { x: cx, y: base - TH / 2 };
+        // Elevated center for slopes
+        const tileCenter = { x: cx, y: base - TH / 2 - heightBoost };
 
         // Parse connections from key
         const conn = {
@@ -1402,56 +1405,103 @@ const Assets = (() => {
         };
         const connCount = (conn.n ? 1 : 0) + (conn.e ? 1 : 0) + (conn.s ? 1 : 0) + (conn.w ? 1 : 0);
 
-        // Slope: draw support pillars first (behind rails)
+        // ---- SLOPE: Draw support framework first (behind everything) ----
         if (isSlope) {
-            ctx.fillStyle = '#666';
-            ctx.fillRect(cx - 10, base - 8 - heightBoost, 3, heightBoost + 4);
-            ctx.fillRect(cx + 8, base - 8 - heightBoost, 3, heightBoost + 4);
-            // Diagonal brace
-            ctx.strokeStyle = '#555';
+            const supportColor = '#606068';
+            const braceColor = '#50505A';
+            const pillarW = 3;
+
+            // Four support columns from ground to elevated track
+            const pillars = [
+                { x: cx - 14, ground: groundCenter.y + 4 },
+                { x: cx + 12, ground: groundCenter.y + 4 },
+                { x: cx - 6, ground: groundCenter.y },
+                { x: cx + 4, ground: groundCenter.y },
+            ];
+            for (const p of pillars) {
+                const top = tileCenter.y + 4;
+                ctx.fillStyle = supportColor;
+                ctx.fillRect(p.x, top, pillarW, p.ground - top);
+                // Column cap
+                ctx.fillStyle = '#888';
+                ctx.fillRect(p.x - 1, top - 1, pillarW + 2, 3);
+            }
+
+            // X-brace between outer pillars
+            ctx.strokeStyle = braceColor;
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.moveTo(cx - 8, base - 4);
-            ctx.lineTo(cx + 10, base - 8 - heightBoost);
+            ctx.moveTo(cx - 13, groundCenter.y + 2);
+            ctx.lineTo(cx + 13, tileCenter.y + 6);
             ctx.stroke();
-        }
-
-        // Base diamond (subtle track bed)
-        const bedY = base - TH / 2 - heightBoost;
-        ctx.fillStyle = isSlope ? 'rgba(90,90,90,0.35)' : 'rgba(90,90,90,0.2)';
-        ctx.beginPath();
-        ctx.moveTo(cx, bedY - TH / 2 + 2);
-        ctx.lineTo(cx + TW / 2 - 2, bedY);
-        ctx.lineTo(cx, bedY + TH / 2 - 2);
-        ctx.lineTo(cx - TW / 2 + 2, bedY);
-        ctx.closePath();
-        ctx.fill();
-
-        // Curve type indicator — small banking markers at corners
-        if (isCurve && connCount >= 2) {
-            ctx.fillStyle = 'rgba(255, 200, 50, 0.3)';
             ctx.beginPath();
-            ctx.arc(cx, tileCenter.y, 4, 0, Math.PI * 2);
+            ctx.moveTo(cx + 13, groundCenter.y + 2);
+            ctx.lineTo(cx - 13, tileCenter.y + 6);
+            ctx.stroke();
+
+            // Horizontal cross-beam
+            ctx.strokeStyle = '#707078';
+            ctx.lineWidth = 2;
+            const midH = (tileCenter.y + 4 + groundCenter.y) / 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, midH);
+            ctx.lineTo(cx + 14, midH);
+            ctx.stroke();
+
+            // Ground shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.08)';
+            ctx.beginPath();
+            ctx.ellipse(cx, groundCenter.y + 6, 18, 5, 0, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Draw rail segments to each connected direction
+        // ---- Base diamond (track bed) ----
+        const bedCenter = isSlope ? tileCenter : groundCenter;
+        ctx.fillStyle = isSlope ? 'rgba(80,80,90,0.4)' : 'rgba(90,90,90,0.2)';
+        ctx.beginPath();
+        ctx.moveTo(cx, bedCenter.y - TH / 2 + 2);
+        ctx.lineTo(cx + TW / 2 - 2, bedCenter.y);
+        ctx.lineTo(cx, bedCenter.y + TH / 2 - 2);
+        ctx.lineTo(cx - TW / 2 + 2, bedCenter.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Slope: darker edge to show it's elevated
+        if (isSlope) {
+            ctx.strokeStyle = 'rgba(60,60,70,0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx, bedCenter.y + TH / 2 - 2);
+            ctx.lineTo(cx - TW / 2 + 2, bedCenter.y);
+            ctx.lineTo(cx, bedCenter.y - TH / 2 + 2);
+            ctx.stroke();
+        }
+
+        // Curve type indicator — banking markers
+        if (isCurve && connCount >= 2) {
+            ctx.fillStyle = 'rgba(255, 200, 50, 0.35)';
+            ctx.beginPath();
+            ctx.arc(cx, bedCenter.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // ---- Draw rail segments to each connected direction ----
         const railColor = '#E84040';
         const railColorDark = '#C03030';
         const tieColor = '#8B6914';
-        const railGap = 3; // perpendicular offset for the two rails
+        const railGap = 3;
 
         const directions = ['n', 'e', 's', 'w'];
         for (const dir of directions) {
             if (!conn[dir]) continue;
 
             const edge = EDGE_OFFSETS[dir];
-            const endX = tileCenter.x + edge.x;
-            const endY = tileCenter.y + edge.y;
+            const endX = bedCenter.x + edge.x;
+            const endY = bedCenter.y + edge.y;
 
             // Perpendicular vector for parallel rails
-            const dx = endX - tileCenter.x;
-            const dy = endY - tileCenter.y;
+            const dx = endX - bedCenter.x;
+            const dy = endY - bedCenter.y;
             const len = Math.sqrt(dx * dx + dy * dy);
             const px = -dy / len * railGap;
             const py = dx / len * railGap;
@@ -1463,8 +1513,8 @@ const Assets = (() => {
             const tieCount = 3;
             for (let i = 1; i <= tieCount; i++) {
                 const t = i / (tieCount + 1);
-                const tx = tileCenter.x + dx * t;
-                const ty = tileCenter.y + dy * t;
+                const tx = bedCenter.x + dx * t;
+                const ty = bedCenter.y + dy * t;
                 ctx.beginPath();
                 ctx.moveTo(tx + px * 1.3, ty + py * 1.3);
                 ctx.lineTo(tx - px * 1.3, ty - py * 1.3);
@@ -1476,59 +1526,39 @@ const Assets = (() => {
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(tileCenter.x + px, tileCenter.y + py);
+            ctx.moveTo(bedCenter.x + px, bedCenter.y + py);
             ctx.lineTo(endX + px, endY + py);
             ctx.stroke();
 
             // Rail 2
             ctx.strokeStyle = railColorDark;
             ctx.beginPath();
-            ctx.moveTo(tileCenter.x - px, tileCenter.y - py);
+            ctx.moveTo(bedCenter.x - px, bedCenter.y - py);
             ctx.lineTo(endX - px, endY - py);
             ctx.stroke();
         }
 
-        // Center hub (the junction point where rails meet)
+        // Center hub
         if (connCount > 0) {
             ctx.fillStyle = '#888';
             ctx.beginPath();
-            ctx.arc(tileCenter.x, tileCenter.y, 3, 0, Math.PI * 2);
+            ctx.arc(bedCenter.x, bedCenter.y, 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = railColor;
             ctx.beginPath();
-            ctx.arc(tileCenter.x, tileCenter.y, 1.5, 0, Math.PI * 2);
+            ctx.arc(bedCenter.x, bedCenter.y, 1.5, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Slope: elevation arrow indicator
-        if (isSlope) {
-            ctx.fillStyle = '#FFD700';
-            ctx.beginPath();
-            ctx.moveTo(cx + 14, tileCenter.y - 10);
-            ctx.lineTo(cx + 10, tileCenter.y - 5);
-            ctx.lineTo(cx + 18, tileCenter.y - 5);
-            ctx.closePath();
-            ctx.fill();
-            // Height line
-            ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([2, 2]);
-            ctx.beginPath();
-            ctx.moveTo(cx + 14, tileCenter.y - 4);
-            ctx.lineTo(cx + 14, tileCenter.y + 8);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        // No connections? Draw a small "X" marker so isolated pieces are visible
+        // No connections? Draw an "X" marker
         if (connCount === 0) {
             ctx.strokeStyle = '#E84040';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(cx - 6, tileCenter.y - 4);
-            ctx.lineTo(cx + 6, tileCenter.y + 4);
-            ctx.moveTo(cx + 6, tileCenter.y - 4);
-            ctx.lineTo(cx - 6, tileCenter.y + 4);
+            ctx.moveTo(cx - 6, bedCenter.y - 4);
+            ctx.lineTo(cx + 6, bedCenter.y + 4);
+            ctx.moveTo(cx + 6, bedCenter.y - 4);
+            ctx.lineTo(cx - 6, bedCenter.y + 4);
             ctx.stroke();
         }
 
