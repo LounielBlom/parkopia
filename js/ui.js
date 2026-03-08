@@ -9,6 +9,8 @@ const UI = (() => {
     let demolishMode = false;
     let inspectedObj = null; // currently shown in info panel
     let parkName = 'Parkopia';
+    let lastInfoRefresh = 0;
+    let forceInfoRefresh = false;
 
     function init() {
         setupCategoryButtons();
@@ -334,6 +336,7 @@ const UI = (() => {
 
             const currentPrice = Economy.getEffectivePrice(inspectedObj);
             Economy.setObjectPrice(inspectedObj, currentPrice + dir);
+            forceInfoRefresh = true;
             refreshInfoPanel();
         });
     }
@@ -367,8 +370,13 @@ const UI = (() => {
             }
         }
 
-        // Live-update info panel
-        refreshInfoPanel();
+        // Live-update info panel (throttled to avoid destroying price buttons mid-click)
+        const now = Date.now();
+        if (forceInfoRefresh || now - lastInfoRefresh > 500) {
+            lastInfoRefresh = now;
+            forceInfoRefresh = false;
+            refreshInfoPanel();
+        }
 
         // Live-update stats/recs if visible
         if (!document.getElementById('stats-panel')?.classList.contains('hidden')) {
