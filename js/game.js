@@ -506,7 +506,15 @@ const Game = (() => {
 
         // Draw objects
         for (const item of renderList) {
-            const sprite = Assets.getForType(item.obj.type, tick);
+            let sprite;
+            const itemDef = BUILDINGS[item.obj.type];
+            if (itemDef?.isTrack) {
+                // Connection-aware track rendering
+                const conns = World.getTrackConnections(item.obj.originX, item.obj.originY);
+                sprite = Assets.getTrackSprite(item.obj.type, conns.key);
+            } else {
+                sprite = Assets.getForType(item.obj.type, tick);
+            }
             if (!sprite) continue;
 
             const drawX = item.screenX - (sprite.width * zoom) / 2;

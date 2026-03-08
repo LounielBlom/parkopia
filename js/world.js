@@ -401,6 +401,29 @@ const World = (() => {
         return false;
     }
 
+    // Get connection bitmask for a track tile (which neighbors are tracks/station)
+    // Returns {n, e, s, w} booleans + a string key for caching
+    function getTrackConnections(x, y) {
+        const dirs = [
+            { key: 'n', dx: 0, dy: -1 },
+            { key: 'e', dx: 1, dy: 0 },
+            { key: 's', dx: 0, dy: 1 },
+            { key: 'w', dx: -1, dy: 0 },
+        ];
+        const conn = { n: false, e: false, s: false, w: false };
+        for (const d of dirs) {
+            const obj = getObject(x + d.dx, y + d.dy);
+            if (obj) {
+                const def = BUILDINGS[obj.type];
+                if (def?.isTrack || def?.isCoasterStation) {
+                    conn[d.key] = true;
+                }
+            }
+        }
+        conn.key = (conn.n ? 'N' : '') + (conn.e ? 'E' : '') + (conn.s ? 'S' : '') + (conn.w ? 'W' : '') || 'X';
+        return conn;
+    }
+
     // Find the station a track piece is connected to (if any)
     function findStationForTrack(trackObj) {
         if (!trackObj || !BUILDINGS[trackObj.type]?.isTrack) return null;
@@ -454,6 +477,7 @@ const World = (() => {
         validateCircuit,
         getCoasterExcitement,
         isTrackAdjacent,
+        getTrackConnections,
         findStationForTrack,
     };
 })();

@@ -1268,146 +1268,270 @@ const Assets = (() => {
 
     // ---- Coaster Station ----
     function renderCoasterStation() {
-        const w = TW * 2 + 10, h = TH * 2 + 50;
+        const w = TW * 2 + 10, h = TH * 2 + 60;
         const c = createCanvas(w, h);
         const ctx = c.getContext('2d');
         const cx = w / 2, base = h - 12;
-        // Platform
-        drawIsoBox(ctx, cx - 30, base - 16, 60, 28, 8, '#888', '#666', '#777');
-        // Roof structure
-        ctx.fillStyle = '#E84040';
-        ctx.beginPath();
-        ctx.moveTo(cx - 34, base - 36);
-        ctx.lineTo(cx + 34, base - 36);
-        ctx.lineTo(cx + 30, base - 20);
-        ctx.lineTo(cx - 30, base - 20);
-        ctx.closePath();
-        ctx.fill();
-        // Support poles
-        ctx.fillStyle = '#555';
-        ctx.fillRect(cx - 28, base - 36, 3, 20);
-        ctx.fillRect(cx + 25, base - 36, 3, 20);
-        // Rails on platform
-        ctx.strokeStyle = '#C040C0';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cx - 26, base - 8);
-        ctx.lineTo(cx + 26, base - 8);
-        ctx.moveTo(cx - 26, base - 4);
-        ctx.lineTo(cx + 26, base - 4);
-        ctx.stroke();
-        // Cart
-        ctx.fillStyle = '#4080E8';
-        ctx.beginPath();
-        ctx.roundRect(cx - 8, base - 12, 16, 8, 3);
-        ctx.fill();
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.roundRect(cx - 6, base - 10, 4, 4, 1);
-        ctx.fill();
-        // "BUILD" text
-        ctx.fillStyle = '#FFF';
-        ctx.font = 'bold 7px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('COASTER', cx, base - 26);
-        return c;
-    }
 
-    // ---- Track: Straight ----
-    function renderTrackStraight() {
-        const c = createCanvas(TW + 4, TH + 14);
-        const ctx = c.getContext('2d');
-        const cx = c.width / 2, base = c.height - 4;
-        // Rail bed
-        drawDiamond(ctx, 4, base - TH / 2 - 2, TW - 4, TH / 2 + 2, 'rgba(100,100,100,0.3)');
-        // Rails (magenta)
-        ctx.strokeStyle = '#C040C0';
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.beginPath();
+        ctx.ellipse(cx, base + 2, 36, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Platform base (isometric box)
+        drawIsoBox(ctx, cx - 34, base - 18, 68, 30, 10, '#A0A0A0', '#707070', '#888');
+
+        // Rails running through the platform
+        ctx.strokeStyle = '#E84040';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        // Left rail
+        ctx.beginPath();
+        ctx.moveTo(cx - 32, base - 5);
+        ctx.lineTo(cx + 32, base - 5);
+        ctx.stroke();
+        // Right rail
+        ctx.beginPath();
+        ctx.moveTo(cx - 32, base);
+        ctx.lineTo(cx + 32, base);
+        ctx.stroke();
+        // Cross-ties
+        ctx.strokeStyle = '#8B6914';
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(4, base - TH / 4);
-        ctx.lineTo(cx, base - TH / 2);
-        ctx.lineTo(TW, base - TH / 4);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(4, base - TH / 4 + 5);
-        ctx.lineTo(cx, base - TH / 2 + 5);
-        ctx.lineTo(TW, base - TH / 4 + 5);
-        ctx.stroke();
-        // Ties
-        ctx.strokeStyle = '#888';
-        ctx.lineWidth = 1.5;
-        for (let i = 0; i < 4; i++) {
-            const t = (i + 0.5) / 4;
-            const tx = 4 + t * (TW - 4);
-            const ty = base - TH / 4 + (t < 0.5 ? -t * TH / 2 : -(1 - t) * TH / 2);
+        for (let i = 0; i < 7; i++) {
+            const tx = cx - 28 + i * 9.3;
             ctx.beginPath();
-            ctx.moveTo(tx - 2, ty - 2);
-            ctx.lineTo(tx + 2, ty + 5);
+            ctx.moveTo(tx, base - 7);
+            ctx.lineTo(tx, base + 2);
             ctx.stroke();
         }
-        return c;
-    }
 
-    // ---- Track: Curve ----
-    function renderTrackCurve() {
-        const c = createCanvas(TW + 4, TH + 14);
-        const ctx = c.getContext('2d');
-        const cx = c.width / 2, base = c.height - 4;
-        // Rail bed
-        drawDiamond(ctx, 4, base - TH / 2 - 2, TW - 4, TH / 2 + 2, 'rgba(100,100,100,0.3)');
-        // Curved rails
-        ctx.strokeStyle = '#C040C0';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(4, base - TH / 4);
-        ctx.quadraticCurveTo(cx, base - 2, cx, base - TH / 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(4 + 5, base - TH / 4 + 3);
-        ctx.quadraticCurveTo(cx + 3, base, cx + 3, base - TH / 2 + 3);
-        ctx.stroke();
-        return c;
-    }
+        // Support poles for roof
+        ctx.fillStyle = '#555';
+        ctx.fillRect(cx - 30, base - 44, 3, 30);
+        ctx.fillRect(cx + 27, base - 44, 3, 30);
 
-    // ---- Track: Slope ----
-    function renderTrackSlope() {
-        const c = createCanvas(TW + 4, TH + 30);
-        const ctx = c.getContext('2d');
-        const cx = c.width / 2, base = c.height - 4;
-        // Support pillars
-        ctx.fillStyle = '#666';
-        ctx.fillRect(cx - 12, base - 20, 3, 16);
-        ctx.fillRect(cx + 10, base - 24, 3, 20);
-        // Rail bed (elevated)
-        ctx.fillStyle = 'rgba(100,100,100,0.4)';
+        // Roof / awning
+        ctx.fillStyle = '#E84040';
         ctx.beginPath();
-        ctx.moveTo(4, base - 12);
-        ctx.lineTo(cx, base - 22);
-        ctx.lineTo(TW, base - 16);
-        ctx.lineTo(cx, base - 6);
+        ctx.moveTo(cx - 36, base - 44);
+        ctx.lineTo(cx + 36, base - 44);
+        ctx.lineTo(cx + 32, base - 38);
+        ctx.lineTo(cx - 32, base - 38);
         ctx.closePath();
         ctx.fill();
-        // Rails
-        ctx.strokeStyle = '#C040C0';
-        ctx.lineWidth = 2;
+        // Roof stripe
+        ctx.fillStyle = '#CC3030';
         ctx.beginPath();
-        ctx.moveTo(4, base - 14);
-        ctx.lineTo(cx, base - 24);
-        ctx.lineTo(TW, base - 18);
-        ctx.stroke();
+        ctx.moveTo(cx - 34, base - 42);
+        ctx.lineTo(cx + 34, base - 42);
+        ctx.lineTo(cx + 33, base - 40);
+        ctx.lineTo(cx - 33, base - 40);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cart on rails
+        ctx.fillStyle = '#4080E8';
         ctx.beginPath();
-        ctx.moveTo(4, base - 9);
-        ctx.lineTo(cx, base - 19);
-        ctx.lineTo(TW, base - 13);
-        ctx.stroke();
-        // Height arrow
+        ctx.roundRect(cx - 10, base - 12, 20, 10, 3);
+        ctx.fill();
+        // Cart windows
         ctx.fillStyle = '#FFD700';
         ctx.beginPath();
-        ctx.moveTo(cx + 16, base - 28);
-        ctx.lineTo(cx + 13, base - 24);
-        ctx.lineTo(cx + 19, base - 24);
+        ctx.roundRect(cx - 7, base - 10, 5, 5, 1);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.roundRect(cx + 2, base - 10, 5, 5, 1);
+        ctx.fill();
+
+        // "COASTER" sign
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('COASTER', cx, base - 30);
+
+        // Small flags on roof
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(cx - 30, base - 44);
+        ctx.lineTo(cx - 30, base - 52);
+        ctx.lineTo(cx - 24, base - 48);
         ctx.closePath();
         ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cx + 30, base - 44);
+        ctx.lineTo(cx + 30, base - 52);
+        ctx.lineTo(cx + 24, base - 48);
+        ctx.closePath();
+        ctx.fill();
+
+        return c;
+    }
+
+    // ---- Connection-Aware Track Rendering ----
+    // Isometric edge midpoints for grid neighbors (relative to tile center):
+    //   North (y-1) → top-right edge:  (+TW/4, -TH/4)
+    //   East  (x+1) → bottom-right:    (+TW/4, +TH/4)
+    //   South (y+1) → bottom-left:     (-TW/4, +TH/4)
+    //   West  (x-1) → top-left edge:   (-TW/4, -TH/4)
+    const EDGE_OFFSETS = {
+        n: { x: TW / 4, y: -TH / 4 },
+        e: { x: TW / 4, y: TH / 4 },
+        s: { x: -TW / 4, y: TH / 4 },
+        w: { x: -TW / 4, y: -TH / 4 },
+    };
+
+    function renderTrackDynamic(type, connKey) {
+        const isSlope = type === 'track_slope';
+        const isCurve = type === 'track_curve';
+        const heightBoost = isSlope ? 16 : 0;
+
+        const c = createCanvas(TW + 8, TH + 20 + heightBoost);
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2;
+        const base = c.height - 6;
+        const tileCenter = { x: cx, y: base - TH / 2 - heightBoost / 2 };
+
+        // Parse connections from key
+        const conn = {
+            n: connKey.includes('N'),
+            e: connKey.includes('E'),
+            s: connKey.includes('S'),
+            w: connKey.includes('W'),
+        };
+        const connCount = (conn.n ? 1 : 0) + (conn.e ? 1 : 0) + (conn.s ? 1 : 0) + (conn.w ? 1 : 0);
+
+        // Slope: draw support pillars first (behind rails)
+        if (isSlope) {
+            ctx.fillStyle = '#666';
+            ctx.fillRect(cx - 10, base - 8 - heightBoost, 3, heightBoost + 4);
+            ctx.fillRect(cx + 8, base - 8 - heightBoost, 3, heightBoost + 4);
+            // Diagonal brace
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, base - 4);
+            ctx.lineTo(cx + 10, base - 8 - heightBoost);
+            ctx.stroke();
+        }
+
+        // Base diamond (subtle track bed)
+        const bedY = base - TH / 2 - heightBoost;
+        ctx.fillStyle = isSlope ? 'rgba(90,90,90,0.35)' : 'rgba(90,90,90,0.2)';
+        ctx.beginPath();
+        ctx.moveTo(cx, bedY - TH / 2 + 2);
+        ctx.lineTo(cx + TW / 2 - 2, bedY);
+        ctx.lineTo(cx, bedY + TH / 2 - 2);
+        ctx.lineTo(cx - TW / 2 + 2, bedY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Curve type indicator — small banking markers at corners
+        if (isCurve && connCount >= 2) {
+            ctx.fillStyle = 'rgba(255, 200, 50, 0.3)';
+            ctx.beginPath();
+            ctx.arc(cx, tileCenter.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw rail segments to each connected direction
+        const railColor = '#E84040';
+        const railColorDark = '#C03030';
+        const tieColor = '#8B6914';
+        const railGap = 3; // perpendicular offset for the two rails
+
+        const directions = ['n', 'e', 's', 'w'];
+        for (const dir of directions) {
+            if (!conn[dir]) continue;
+
+            const edge = EDGE_OFFSETS[dir];
+            const endX = tileCenter.x + edge.x;
+            const endY = tileCenter.y + edge.y;
+
+            // Perpendicular vector for parallel rails
+            const dx = endX - tileCenter.x;
+            const dy = endY - tileCenter.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const px = -dy / len * railGap;
+            const py = dx / len * railGap;
+
+            // Cross-ties (draw first, behind rails)
+            ctx.strokeStyle = tieColor;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'butt';
+            const tieCount = 3;
+            for (let i = 1; i <= tieCount; i++) {
+                const t = i / (tieCount + 1);
+                const tx = tileCenter.x + dx * t;
+                const ty = tileCenter.y + dy * t;
+                ctx.beginPath();
+                ctx.moveTo(tx + px * 1.3, ty + py * 1.3);
+                ctx.lineTo(tx - px * 1.3, ty - py * 1.3);
+                ctx.stroke();
+            }
+
+            // Rail 1
+            ctx.strokeStyle = railColor;
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(tileCenter.x + px, tileCenter.y + py);
+            ctx.lineTo(endX + px, endY + py);
+            ctx.stroke();
+
+            // Rail 2
+            ctx.strokeStyle = railColorDark;
+            ctx.beginPath();
+            ctx.moveTo(tileCenter.x - px, tileCenter.y - py);
+            ctx.lineTo(endX - px, endY - py);
+            ctx.stroke();
+        }
+
+        // Center hub (the junction point where rails meet)
+        if (connCount > 0) {
+            ctx.fillStyle = '#888';
+            ctx.beginPath();
+            ctx.arc(tileCenter.x, tileCenter.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = railColor;
+            ctx.beginPath();
+            ctx.arc(tileCenter.x, tileCenter.y, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Slope: elevation arrow indicator
+        if (isSlope) {
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(cx + 14, tileCenter.y - 10);
+            ctx.lineTo(cx + 10, tileCenter.y - 5);
+            ctx.lineTo(cx + 18, tileCenter.y - 5);
+            ctx.closePath();
+            ctx.fill();
+            // Height line
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(cx + 14, tileCenter.y - 4);
+            ctx.lineTo(cx + 14, tileCenter.y + 8);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // No connections? Draw a small "X" marker so isolated pieces are visible
+        if (connCount === 0) {
+            ctx.strokeStyle = '#E84040';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, tileCenter.y - 4);
+            ctx.lineTo(cx + 6, tileCenter.y + 4);
+            ctx.moveTo(cx + 6, tileCenter.y - 4);
+            ctx.lineTo(cx - 6, tileCenter.y + 4);
+            ctx.stroke();
+        }
+
         return c;
     }
 
@@ -1770,9 +1894,7 @@ const Assets = (() => {
         getHauntedHouse: () => get('haunted_house', renderHauntedHouse),
         getWaterSlide: () => get('water_slide', renderWaterSlide),
         getCoasterStation: () => get('coaster_station', renderCoasterStation),
-        getTrackStraight: () => get('track_straight', renderTrackStraight),
-        getTrackCurve: () => get('track_curve', renderTrackCurve),
-        getTrackSlope: () => get('track_slope', renderTrackSlope),
+        getTrackSprite: (type, connKey) => get('track_' + type + '_' + connKey, renderTrackDynamic, type, connKey),
         getArcade: () => get('arcade', renderArcade),
         getLounge: () => get('lounge', renderLounge),
         getGuest: (color) => get('guest_' + color, renderGuest, color),
@@ -1816,9 +1938,9 @@ const Assets = (() => {
                 case 'haunted_house': return this.getHauntedHouse();
                 case 'water_slide': return this.getWaterSlide();
                 case 'coaster_station': return this.getCoasterStation();
-                case 'track_straight': return this.getTrackStraight();
-                case 'track_curve': return this.getTrackCurve();
-                case 'track_slope': return this.getTrackSlope();
+                case 'track_straight': return this.getTrackSprite('track_straight', 'NE');
+                case 'track_curve': return this.getTrackSprite('track_curve', 'NE');
+                case 'track_slope': return this.getTrackSprite('track_slope', 'NE');
                 case 'popcorn_cart': return this.getFoodStall('popcorn_cart');
                 case 'taco_stand': return this.getFoodStall('taco_stand');
                 case 'sushi_bar': return this.getFoodStall('sushi_bar');
